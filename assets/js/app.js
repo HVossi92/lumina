@@ -23,6 +23,7 @@ import { LiveSocket } from "phoenix_live_view";
 import { hooks as colocatedHooks } from "phoenix-colocated/lumina";
 import topbar from "../vendor/topbar";
 import MishkaComponents from "../vendor/mishka_components.js";
+import LightboxKeys from "../vendor/lightbox_keys.js";
 const csrfToken = document
   .querySelector("meta[name='csrf-token']")
   .getAttribute("content");
@@ -34,6 +35,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
   hooks: {
     ...colocatedHooks,
     ...MishkaComponents,
+    LightboxKeys,
   },
 });
 // Show progress bar on live navigation and form submits
