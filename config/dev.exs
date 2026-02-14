@@ -68,6 +68,9 @@ config :lumina, LuminaWeb.Endpoint,
 # Enable dev routes for dashboard and mailbox
 config :lumina, dev_routes: true, token_signing_secret: "TFThxDIR9vQ1naN7zp4w3jPaQ8hAME3t"
 
+# Log full auth failure reasons (e.g. OAuth secret/config errors)
+config :ash_authentication, :debug_authentication_failures?, true
+
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"
 

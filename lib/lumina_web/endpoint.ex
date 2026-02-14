@@ -15,6 +15,12 @@ defmodule LuminaWeb.Endpoint do
     websocket: [connect_info: [session: @session_options]],
     longpoll: [connect_info: [session: @session_options]]
 
+  # Serve user uploads (originals and thumbnails) - no only filter
+  plug Plug.Static,
+    at: "/uploads",
+    from: {:lumina, "priv/static/uploads"},
+    gzip: false
+
   # Serve at "/" the static files from "priv/static" directory.
   #
   # When code reloading is disabled (e.g., in production),

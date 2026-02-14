@@ -22,6 +22,20 @@ defmodule LuminaWeb.OrgLiveTest do
 
       assert_redirect(view, ~p"/orgs/new-org")
     end
+
+    test "creates new organization with slug generated from name when slug left empty", %{
+      conn: conn,
+      user: user
+    } do
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/orgs/new")
+
+      view
+      |> form("#org-form", org: %{name: "Auto Slug Org", slug: ""})
+      |> render_submit()
+
+      assert_redirect(view, ~p"/orgs/auto-slug-org")
+    end
   end
 
   describe "OrgLive.Show" do

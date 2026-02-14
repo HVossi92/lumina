@@ -27,6 +27,8 @@ defmodule Lumina.Media.Org do
       accept [:name, :slug]
       argument :owner_id, :uuid, allow_nil?: false
 
+      change Lumina.Media.Org.GenerateSlugFromName
+
       change after_action(fn changeset, org, _context ->
                owner_id = Ash.Changeset.get_argument(changeset, :owner_id)
 

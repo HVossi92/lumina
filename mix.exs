@@ -96,7 +96,8 @@ defmodule Lumina.MixProject do
       # Testing and code quality
       {:excoveralls, "~> 0.18", only: :test},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:dotenvy, "~> 1.1", only: [:dev, :test]}
     ]
   end
 

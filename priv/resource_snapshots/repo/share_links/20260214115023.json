@@ -7,8 +7,8 @@
       "source": "id",
       "references": null,
       "allow_nil?": false,
-      "generated?": false,
-      "primary_key?": true
+      "primary_key?": true,
+      "generated?": false
     },
     {
       "default": "nil",
@@ -17,8 +17,8 @@
       "source": "token",
       "references": null,
       "allow_nil?": false,
-      "generated?": false,
-      "primary_key?": false
+      "primary_key?": false,
+      "generated?": false
     },
     {
       "default": "nil",
@@ -27,8 +27,8 @@
       "source": "password_hash",
       "references": null,
       "allow_nil?": true,
-      "generated?": false,
-      "primary_key?": false
+      "primary_key?": false,
+      "generated?": false
     },
     {
       "default": "nil",
@@ -37,8 +37,8 @@
       "source": "expires_at",
       "references": null,
       "allow_nil?": false,
-      "generated?": false,
-      "primary_key?": false
+      "primary_key?": false,
+      "generated?": false
     },
     {
       "default": "nil",
@@ -47,8 +47,8 @@
       "source": "view_count",
       "references": null,
       "allow_nil?": true,
-      "generated?": false,
-      "primary_key?": false
+      "primary_key?": false,
+      "generated?": false
     },
     {
       "default": "nil",
@@ -57,8 +57,8 @@
       "source": "max_views",
       "references": null,
       "allow_nil?": true,
-      "generated?": false,
-      "primary_key?": false
+      "primary_key?": false,
+      "generated?": false
     },
     {
       "default": "[]",
@@ -70,8 +70,8 @@
       "source": "photo_ids",
       "references": null,
       "allow_nil?": true,
-      "generated?": false,
-      "primary_key?": false
+      "primary_key?": false,
+      "generated?": false
     },
     {
       "default": "nil",
@@ -83,20 +83,20 @@
         "table": "orgs",
         "multitenancy": {
           "global": null,
-          "attribute": null,
-          "strategy": null
+          "strategy": null,
+          "attribute": null
         },
         "primary_key?": true,
         "destination_attribute": "id",
-        "on_update": null,
         "on_delete": null,
+        "on_update": null,
         "deferrable": false,
         "destination_attribute_default": null,
         "destination_attribute_generated": null
       },
       "allow_nil?": false,
-      "generated?": false,
-      "primary_key?": false
+      "primary_key?": false,
+      "generated?": false
     },
     {
       "default": "nil",
@@ -105,8 +105,8 @@
       "source": "inserted_at",
       "references": null,
       "allow_nil?": false,
-      "generated?": false,
-      "primary_key?": false
+      "primary_key?": false,
+      "generated?": false
     },
     {
       "default": "nil",
@@ -115,8 +115,8 @@
       "source": "updated_at",
       "references": null,
       "allow_nil?": false,
-      "generated?": false,
-      "primary_key?": false
+      "primary_key?": false,
+      "generated?": false
     },
     {
       "default": "nil",
@@ -128,20 +128,20 @@
         "table": "albums",
         "multitenancy": {
           "global": false,
-          "attribute": "org_id",
-          "strategy": "attribute"
+          "strategy": "attribute",
+          "attribute": "org_id"
         },
         "primary_key?": true,
         "destination_attribute": "id",
-        "on_update": null,
         "on_delete": null,
+        "on_update": null,
         "deferrable": false,
         "destination_attribute_default": null,
         "destination_attribute_generated": null
       },
       "allow_nil?": true,
-      "generated?": false,
-      "primary_key?": false
+      "primary_key?": false,
+      "generated?": false
     },
     {
       "default": "nil",
@@ -153,29 +153,29 @@
         "table": "users",
         "multitenancy": {
           "global": null,
-          "attribute": null,
-          "strategy": null
+          "strategy": null,
+          "attribute": null
         },
         "primary_key?": true,
         "destination_attribute": "id",
-        "on_update": null,
         "on_delete": null,
+        "on_update": null,
         "deferrable": false,
         "destination_attribute_default": null,
         "destination_attribute_generated": null
       },
       "allow_nil?": true,
-      "generated?": false,
-      "primary_key?": false
+      "primary_key?": false,
+      "generated?": false
     }
   ],
   "table": "share_links",
-  "hash": "1CA1C10E94FDCFAAFB14FAB899EE4341B52EA96B0C6CF583FDA4427E62EC67C5",
+  "hash": "2556DBB804C26FF8304C0C6815AC461413C81724C3A72647AF818848C1F49167",
   "repo": "Elixir.Lumina.Repo",
   "multitenancy": {
     "global": true,
-    "attribute": "org_id",
-    "strategy": "attribute"
+    "strategy": "attribute",
+    "attribute": "org_id"
   },
   "identities": [
     {
@@ -188,8 +188,8 @@
     }
   ],
   "strict?": false,
-  "base_filter": null,
   "custom_indexes": [],
+  "base_filter": null,
   "custom_statements": [],
   "has_create_action": true
 }

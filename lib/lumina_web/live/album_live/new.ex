@@ -11,7 +11,9 @@ defmodule LuminaWeb.AlbumLive.New do
 
   @impl true
   def handle_event("validate", %{"album" => album_params}, socket) do
-    {:noreply, assign(socket, form: to_form(album_params, as: "album"))}
+    current = socket.assigns.form.params
+    merged = Map.merge(current, album_params)
+    {:noreply, assign(socket, form: to_form(merged, as: "album"))}
   end
 
   @impl true
@@ -19,20 +21,24 @@ defmodule LuminaWeb.AlbumLive.New do
     user = socket.assigns.current_user
     org = socket.assigns.org
 
-    case Lumina.Media.Album.create(
-           album_params["name"],
-           org.id,
-           actor: user,
-           tenant: org.id
-         ) do
+    case Lumina.Media.Album
+         |> Ash.Changeset.for_create(:create, %{
+           name: album_params["name"],
+           description: album_params["description"],
+           org_id: org.id
+         })
+         |> Ash.create(actor: user, tenant: org.id) do
       {:ok, album} ->
         {:noreply,
          socket
          |> put_flash(:info, "Album created successfully")
          |> push_navigate(to: ~p"/orgs/#{org.slug}/albums/#{album.id}")}
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset, as: "album"))}
+      {:error, error} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, Exception.message(error))
+         |> assign(form: to_form(album_params, as: "album"))}
     end
   end
 
@@ -44,31 +50,25 @@ defmodule LuminaWeb.AlbumLive.New do
         Create Album in {@org.name}
       </h1>
 
-      <.form for={@form} phx-submit="save" phx-change="validate" class="space-y-6">
+      <.form for={@form} id="album-form" phx-submit="save" phx-change="validate" class="space-y-6">
         <div>
-          <label for="album_name" class="block text-sm font-medium text-gray-700">
-            Album Name
-          </label>
-          <input
+          <.input
+            field={@form[:name]}
             type="text"
-            name="album[name]"
-            id="album_name"
+            label="Album Name"
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             required
           />
         </div>
 
         <div>
-          <label for="album_description" class="block text-sm font-medium text-gray-700">
-            Description (optional)
-          </label>
-          <textarea
-            name="album[description]"
-            id="album_description"
+          <.input
+            field={@form[:description]}
+            type="textarea"
+            label="Description (optional)"
             rows="3"
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          >
-          </textarea>
+          />
         </div>
 
         <div class="flex justify-end gap-3">

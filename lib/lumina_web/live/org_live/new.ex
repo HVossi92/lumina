@@ -8,16 +8,20 @@ defmodule LuminaWeb.OrgLive.New do
 
   @impl true
   def handle_event("validate", %{"org" => org_params}, socket) do
-    {:noreply, assign(socket, form: to_form(org_params, as: "org"))}
+    current = socket.assigns.form.params
+    merged = Map.merge(current, org_params)
+    {:noreply, assign(socket, form: to_form(merged, as: "org"))}
   end
 
   @impl true
   def handle_event("save", %{"org" => org_params}, socket) do
     user = socket.assigns.current_user
+    name = org_params["name"] || ""
+    slug = org_params["slug"] || ""
 
     case Lumina.Media.Org.create(
-           org_params["name"],
-           org_params["slug"],
+           name,
+           slug,
            user.id,
            actor: user
          ) do
@@ -27,8 +31,11 @@ defmodule LuminaWeb.OrgLive.New do
          |> put_flash(:info, "Organization created successfully")
          |> push_navigate(to: ~p"/orgs/#{org.slug}")}
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset, as: "org"))}
+      {:error, error} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, Exception.message(error))
+         |> assign(form: to_form(org_params, as: "org"))}
     end
   end
 
@@ -40,32 +47,25 @@ defmodule LuminaWeb.OrgLive.New do
 
       <.form for={@form} id="org-form" phx-submit="save" phx-change="validate" class="space-y-6">
         <div>
-          <label for="org_name" class="block text-sm font-medium text-gray-700">
-            Name
-          </label>
-          <input
+          <.input
+            field={@form[:name]}
             type="text"
-            name="org[name]"
-            id="org_name"
+            label="Name"
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             required
           />
         </div>
 
         <div>
-          <label for="org_slug" class="block text-sm font-medium text-gray-700">
-            Slug (URL-friendly name)
-          </label>
-          <input
+          <.input
+            field={@form[:slug]}
             type="text"
-            name="org[slug]"
-            id="org_slug"
+            label="Slug (URL-friendly name)"
             pattern="[a-z0-9-]+"
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            required
           />
           <p class="mt-2 text-sm text-gray-500">
-            Only lowercase letters, numbers, and hyphens allowed
+            Leave empty to generate from name. Only lowercase letters, numbers, and hyphens allowed.
           </p>
         </div>
 

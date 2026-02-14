@@ -1,8 +1,6 @@
 defmodule LuminaWeb.AlbumLive.Show do
   use LuminaWeb, :live_view
 
-  alias Lumina.Media.Thumbnail
-
   @impl true
   def mount(%{"org_slug" => slug, "album_id" => album_id}, _session, socket) do
     user = socket.assigns.current_user
@@ -115,13 +113,15 @@ defmodule LuminaWeb.AlbumLive.Show do
         <% else %>
           <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             <%= for photo <- @photos do %>
-              <div class="group relative aspect-square">
+              <div class="group relative aspect-square overflow-hidden rounded-lg bg-gray-100">
                 <img
-                  src={Thumbnail.thumbnail_url(photo.id, photo.filename)}
+                  src={~p"/uploads/thumbnails/#{Path.basename(photo.thumbnail_path)}"}
+                  data-original-src={~p"/uploads/originals/#{Path.basename(photo.original_path)}"}
+                  onerror="if(!this.dataset.fallbackAttempted){this.dataset.fallbackAttempted='true';this.src=this.dataset.originalSrc}"
                   alt={photo.filename}
-                  class="h-full w-full object-cover rounded-lg"
+                  class="h-full w-full object-cover"
                 />
-                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition rounded-lg flex items-center justify-center">
+                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition rounded-lg flex items-center justify-center">
                   <button
                     phx-click="delete_photo"
                     phx-value-id={photo.id}

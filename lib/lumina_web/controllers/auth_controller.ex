@@ -2,6 +2,8 @@ defmodule LuminaWeb.AuthController do
   use LuminaWeb, :controller
   use AshAuthentication.Phoenix.Controller
 
+  require Logger
+
   def success(conn, activity, user, _token) do
     return_to = get_session(conn, :return_to) || ~p"/"
 
@@ -22,6 +24,8 @@ defmodule LuminaWeb.AuthController do
   end
 
   def failure(conn, activity, reason) do
+    Logger.error("Auth failure for #{inspect(activity)}: #{inspect(reason)}")
+
     message =
       case {activity, reason} do
         {_,
@@ -34,6 +38,9 @@ defmodule LuminaWeb.AuthController do
           You have already signed in another way, but have not confirmed your account.
           You can confirm your account using the link we sent to you, or by resetting your password.
           """
+
+        {{:google, _phase}, _} ->
+          "Could not sign in with Google. Please try again."
 
         _ ->
           "Incorrect email or password"

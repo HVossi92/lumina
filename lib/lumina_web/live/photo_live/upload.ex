@@ -91,7 +91,10 @@ defmodule LuminaWeb.PhotoLive.Upload do
       </h1>
 
       <form id="upload-form" phx-submit="save" phx-change="validate">
-        <div class="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-gray-400 transition">
+        <div
+          class="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-gray-400 transition"
+          phx-drop-target={@uploads.photos.ref}
+        >
           <svg
             class="mx-auto h-12 w-12 text-gray-400"
             stroke="currentColor"
@@ -180,6 +183,7 @@ defmodule LuminaWeb.PhotoLive.Upload do
             </.link>
             <button
               type="submit"
+              phx-disable-with="Uploading..."
               class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
             >
               Upload {length(@uploads.photos.entries)} {if length(@uploads.photos.entries) ==

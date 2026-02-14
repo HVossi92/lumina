@@ -18,6 +18,15 @@ defmodule Lumina.Accounts.User do
         hashed_password_field :hashed_password
         register_action_name :register_with_password
       end
+
+      # Without confirmation add-on we set prevent_hijacking?: false.
+      # See https://hexdocs.pm/ash_authentication/AshAuthentication.Strategy.OAuth2.html
+      google do
+        client_id Lumina.Secrets
+        redirect_uri Lumina.Secrets
+        client_secret Lumina.Secrets
+        prevent_hijacking? false
+      end
     end
 
     add_ons do
@@ -37,6 +46,21 @@ defmodule Lumina.Accounts.User do
 
   actions do
     defaults [:read]
+
+    create :register_with_google do
+      argument :user_info, :map, allow_nil?: false
+      argument :oauth_tokens, :map, allow_nil?: false
+      upsert? true
+      upsert_identity :unique_email
+      upsert_fields []
+
+      change AshAuthentication.GenerateTokenChange
+
+      change fn changeset, _ctx ->
+        user_info = Ash.Changeset.get_argument(changeset, :user_info)
+        Ash.Changeset.change_attributes(changeset, Map.take(user_info, ["email"]))
+      end
+    end
 
     read :get_by_subject do
       description "Get a user by the subject claim in a JWT"
@@ -61,7 +85,7 @@ defmodule Lumina.Accounts.User do
     end
 
     attribute :hashed_password, :string do
-      allow_nil? false
+      allow_nil? true
       sensitive? true
     end
 

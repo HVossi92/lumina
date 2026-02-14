@@ -7,6 +7,20 @@ import Config
 # any compile-time configuration in here, as it won't be applied.
 # The block below contains prod specific runtime configuration.
 
+# Load .env files in development and test (requires dotenvy dep).
+# Use path relative to config dir so it works regardless of cwd.
+# Dotenvy stores vars in the process; we must use System.put_env so Application config sees them.
+if config_env() in [:dev, :test] do
+  if Code.ensure_loaded?(Dotenvy) do
+    env_file = Path.expand("../.env", __DIR__)
+
+    if File.exists?(env_file) do
+      vars = Dotenvy.source!([env_file, System.get_env()])
+      System.put_env(vars)
+    end
+  end
+end
+
 # ## Using releases
 #
 # If you use `mix release`, you need to explicitly enable the server
@@ -22,6 +36,18 @@ end
 
 config :lumina, LuminaWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
+
+# Google OAuth (all environments). Create credentials at
+# https://console.cloud.google.com/apis/credentials and add your
+# redirect URI to Authorized redirect URIs.
+if config_env() != :prod do
+  config :lumina, :google_oauth,
+    client_id: System.get_env("GOOGLE_OAUTH_CLIENT_ID"),
+    redirect_uri:
+      System.get_env("GOOGLE_OAUTH_REDIRECT_URI") ||
+        "http://localhost:4000/auth/user/google/callback",
+    client_secret: System.get_env("GOOGLE_OAUTH_CLIENT_SECRET")
+end
 
 if config_env() == :prod do
   database_path =
@@ -68,6 +94,15 @@ if config_env() == :prod do
     token_signing_secret:
       System.get_env("TOKEN_SIGNING_SECRET") ||
         raise("Missing environment variable `TOKEN_SIGNING_SECRET`!")
+
+  # Google OAuth (production). Set GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET.
+  # Redirect URI must be https://YOUR_HOST/auth/user/google/callback in Google Cloud Console.
+  config :lumina, :google_oauth,
+    client_id: System.get_env("GOOGLE_OAUTH_CLIENT_ID"),
+    redirect_uri:
+      System.get_env("GOOGLE_OAUTH_REDIRECT_URI") ||
+        "https://#{host}/auth/user/google/callback",
+    client_secret: System.get_env("GOOGLE_OAUTH_CLIENT_SECRET")
 
   # Configure Oban for production
   config :lumina, Oban,

@@ -5,8 +5,13 @@ defmodule LuminaWeb.OrgLive.Show do
   def mount(%{"org_slug" => slug}, _session, socket) do
     user = socket.assigns.current_user
 
+    cover_photo_query =
+      Lumina.Media.Photo
+      |> Ash.Query.sort(inserted_at: :asc)
+      |> Ash.Query.limit(1)
+
     org = Lumina.Media.Org.by_slug!(slug, actor: user)
-    org = Ash.load!(org, [:albums], actor: user, tenant: org.id)
+    org = Ash.load!(org, [albums: [photos: cover_photo_query]], actor: user, tenant: org.id)
 
     {:ok, assign(socket, org: org, albums: org.albums, page_title: org.name)}
   end
@@ -35,20 +40,32 @@ defmodule LuminaWeb.OrgLive.Show do
             navigate={~p"/orgs/#{@org.slug}/albums/#{album.id}"}
             class="group relative flex flex-col rounded-lg border border-gray-300 bg-white overflow-hidden shadow-sm hover:shadow-md transition"
           >
-            <div class="aspect-square bg-gray-100 flex items-center justify-center">
-              <svg
-                class="h-12 w-12 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+            <div class="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
+              <%= if cover_photo = List.first(album.photos || []) do %>
+                <img
+                  src={~p"/uploads/thumbnails/#{Path.basename(cover_photo.thumbnail_path)}"}
+                  data-original-src={
+                    ~p"/uploads/originals/#{Path.basename(cover_photo.original_path)}"
+                  }
+                  onerror="if(!this.dataset.fallbackAttempted){this.dataset.fallbackAttempted='true';this.src=this.dataset.originalSrc}"
+                  alt={album.name}
+                  class="h-full w-full object-cover"
                 />
-              </svg>
+              <% else %>
+                <svg
+                  class="h-12 w-12 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              <% end %>
             </div>
             <div class="px-6 py-5">
               <h3 class="text-lg font-semibold text-gray-900">{album.name}</h3>

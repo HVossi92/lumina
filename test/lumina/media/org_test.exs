@@ -21,6 +21,15 @@ defmodule Lumina.Media.OrgTest do
       assert hd(org.memberships).role == :owner
     end
 
+    test "generates slug from name when slug is blank" do
+      user = user_fixture()
+
+      {:ok, org} = Org.create("My New Organization", "", user.id, actor: user)
+
+      assert org.name == "My New Organization"
+      assert org.slug == "my-new-organization"
+    end
+
     test "slug must be unique" do
       user = user_fixture()
 

@@ -1,7 +1,7 @@
 defmodule LuminaWeb.ShareLive.Show do
   use LuminaWeb, :live_view
 
-  alias Lumina.Media.{ShareLink, Thumbnail}
+  alias Lumina.Media.ShareLink
 
   @impl true
   def mount(%{"token" => token}, _session, socket) do
@@ -129,7 +129,9 @@ defmodule LuminaWeb.ShareLive.Show do
             <%= for photo <- @photos do %>
               <div class="aspect-square">
                 <img
-                  src={Thumbnail.thumbnail_url(photo.id, photo.filename)}
+                  src={~p"/uploads/thumbnails/#{Path.basename(photo.thumbnail_path)}"}
+                  data-original-src={~p"/uploads/originals/#{Path.basename(photo.original_path)}"}
+                  onerror="if(!this.dataset.fallbackAttempted){this.dataset.fallbackAttempted='true';this.src=this.dataset.originalSrc}"
                   alt={photo.filename}
                   class="h-full w-full object-cover rounded-lg"
                 />
