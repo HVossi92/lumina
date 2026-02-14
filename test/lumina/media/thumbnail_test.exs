@@ -10,7 +10,7 @@ defmodule Lumina.Media.ThumbnailTest do
 
       path = Thumbnail.thumbnail_path(photo_id, filename)
 
-      assert path =~ "priv/static/uploads/thumbnails/#{photo_id}.jpg"
+      assert path =~ "priv/static/uploads/thumbnails/#{photo_id}.avif"
     end
 
     test "original_path generates correct path" do
@@ -28,7 +28,7 @@ defmodule Lumina.Media.ThumbnailTest do
 
       url = Thumbnail.thumbnail_url(photo_id, filename)
 
-      assert url == "/uploads/thumbnails/#{photo_id}.jpg"
+      assert url == "/uploads/thumbnails/#{photo_id}.avif"
     end
 
     test "original_url generates correct URL" do

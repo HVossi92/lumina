@@ -3,7 +3,8 @@ defmodule Lumina.Media.Thumbnail do
   Handles thumbnail generation for uploaded photos using libvips.
   """
 
-  @thumbnail_size 400
+  @thumbnail_size 800
+  @thumbnail_ext ".avif"
   @quality 85
 
   @doc """
@@ -11,13 +12,14 @@ defmodule Lumina.Media.Thumbnail do
 
   ## Examples
 
-      iex> generate("/path/to/original.jpg", "/path/to/thumb.jpg")
-      {:ok, "/path/to/thumb.jpg"}
+      iex> generate("/path/to/original.jpg", "/path/to/thumb.avif")
+      {:ok, "/path/to/thumb.avif"}
   """
   def generate(source_path, dest_path) do
     with {:ok, image} <- Vix.Vips.Image.new_from_file(source_path),
          {:ok, resized} <- resize_image(image),
-         :ok <- write_image(resized, dest_path) do
+         {:ok, sharpened} <- Vix.Vips.Operation.sharpen(resized, sigma: 0.5),
+         :ok <- write_image(sharpened, dest_path) do
       {:ok, dest_path}
     else
       {:error, reason} ->
@@ -34,7 +36,7 @@ defmodule Lumina.Media.Thumbnail do
 
     # Only resize if image is larger than thumbnail size
     if scale < 1.0 do
-      Vix.Vips.Operation.resize(image, scale)
+      Vix.Vips.Operation.resize(image, scale, kernel: :VIPS_KERNEL_LANCZOS3)
     else
       {:ok, image}
     end
@@ -54,6 +56,7 @@ defmodule Lumina.Media.Thumbnail do
     case Path.extname(path) |> String.downcase() do
       ext when ext in [".jpg", ".jpeg"] -> [Q: @quality]
       ".webp" -> [Q: @quality]
+      ".avif" -> [Q: @quality, effort: 4]
       ".png" -> [compression: 9]
       _ -> []
     end
@@ -62,9 +65,8 @@ defmodule Lumina.Media.Thumbnail do
   @doc """
   Generate thumbnail path for a photo.
   """
-  def thumbnail_path(photo_id, filename) do
-    ext = Path.extname(filename)
-    Path.join(["priv", "static", "uploads", "thumbnails", "#{photo_id}#{ext}"])
+  def thumbnail_path(photo_id, _filename) do
+    Path.join(["priv", "static", "uploads", "thumbnails", "#{photo_id}#{@thumbnail_ext}"])
   end
 
   @doc """
@@ -98,9 +100,8 @@ defmodule Lumina.Media.Thumbnail do
   @doc """
   Get public URL path for thumbnail.
   """
-  def thumbnail_url(photo_id, filename) do
-    ext = Path.extname(filename)
-    "/uploads/thumbnails/#{photo_id}#{ext}"
+  def thumbnail_url(photo_id, _filename) do
+    "/uploads/thumbnails/#{photo_id}#{@thumbnail_ext}"
   end
 
   @doc """

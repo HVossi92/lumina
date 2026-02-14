@@ -6,6 +6,7 @@ RUN apk add --no-cache \
     build-base \
     git \
     vips-dev \
+    vips-heif \
     nodejs \
     npm
 
@@ -47,6 +48,7 @@ RUN apk add --no-cache \
     openssl \
     ncurses-libs \
     vips \
+    vips-heif \
     tar
 
 WORKDIR /app

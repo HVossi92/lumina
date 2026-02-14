@@ -78,7 +78,7 @@ defmodule Lumina.Fixtures do
         filename: filename,
         original_path: attrs[:original_path] || "priv/static/uploads/originals/#{photo_id}.jpg",
         thumbnail_path:
-          attrs[:thumbnail_path] || "priv/static/uploads/thumbnails/#{photo_id}.jpg",
+          attrs[:thumbnail_path] || "priv/static/uploads/thumbnails/#{photo_id}.avif",
         file_size: attrs[:file_size] || 1024,
         content_type: attrs[:content_type] || "image/jpeg",
         tags: attrs[:tags] || [],

@@ -44,3 +44,9 @@ npm-debug.log
 .env.*
 !.env.example
 
+# User uploads (photos) – do not commit binary assets
+/priv/static/uploads/originals/*
+!/priv/static/uploads/originals/.gitkeep
+/priv/static/uploads/thumbnails/*
+!/priv/static/uploads/thumbnails/.gitkeep
+
