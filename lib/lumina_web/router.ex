@@ -9,6 +9,7 @@ defmodule LuminaWeb.Router do
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
+    plug LuminaWeb.Plugs.StoreRequestPath
     plug LuminaWeb.Plugs.StoreReturnTo
     plug :fetch_live_flash
     plug :put_root_layout, html: {LuminaWeb.Layouts, :root}
@@ -34,7 +35,11 @@ defmodule LuminaWeb.Router do
 
     ash_authentication_live_session :authenticated_routes,
       layout: {LuminaWeb.Layouts, :app},
-      on_mount: [{LuminaWeb.LiveUserAuth, :live_user_required}] do
+      on_mount: [
+        {LuminaWeb.LiveUserAuth, :live_user_required},
+        {LuminaWeb.LiveUserAuth, :assign_current_path},
+        {LuminaWeb.LiveUserAuth, :assign_sidebar_albums}
+      ] do
       live "/", DashboardLive
       live "/join", JoinLive
       live "/join/:token", JoinLive
@@ -61,26 +66,26 @@ defmodule LuminaWeb.Router do
                   auth_routes_prefix: "/auth",
                   on_mount: [{LuminaWeb.LiveUserAuth, :live_no_user}],
                   overrides: [
-                    LuminaWeb.AuthOverrides,
-                    Elixir.AshAuthentication.Phoenix.Overrides.DaisyUI
+                    Elixir.AshAuthentication.Phoenix.Overrides.DaisyUI,
+                    LuminaWeb.AuthOverrides
                   ]
 
     # Remove this if you do not want to use the reset password feature
     reset_route auth_routes_prefix: "/auth",
                 overrides: [
-                  LuminaWeb.AuthOverrides,
-                  Elixir.AshAuthentication.Phoenix.Overrides.DaisyUI
+                  Elixir.AshAuthentication.Phoenix.Overrides.DaisyUI,
+                  LuminaWeb.AuthOverrides
                 ]
 
     # Remove this if you do not use the confirmation strategy
     confirm_route Lumina.Accounts.User, :confirm_new_user,
       auth_routes_prefix: "/auth",
-      overrides: [LuminaWeb.AuthOverrides, Elixir.AshAuthentication.Phoenix.Overrides.DaisyUI]
+      overrides: [Elixir.AshAuthentication.Phoenix.Overrides.DaisyUI, LuminaWeb.AuthOverrides]
 
     # Remove this if you do not use the magic link strategy.
     magic_sign_in_route(Lumina.Accounts.User, :magic_link,
       auth_routes_prefix: "/auth",
-      overrides: [LuminaWeb.AuthOverrides, Elixir.AshAuthentication.Phoenix.Overrides.DaisyUI]
+      overrides: [Elixir.AshAuthentication.Phoenix.Overrides.DaisyUI, LuminaWeb.AuthOverrides]
     )
   end
 

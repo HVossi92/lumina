@@ -28,6 +28,139 @@ defmodule LuminaWeb.AlbumLiveTest do
 
       assert html =~ "No photos"
     end
+
+    test "search filters photos by filename", %{conn: conn, user: user, org: org, album: album} do
+      photo_fixture(album, user, %{filename: "sunset-beach.jpg"})
+      photo_fixture(album, user, %{filename: "mountain-view.jpg"})
+
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/albums/#{album.id}")
+
+      assert view |> element("#album-search-form") |> render_change(%{"q" => "sunset"}) =~
+               "sunset-beach"
+
+      refute render(view) =~ "mountain-view"
+    end
+
+    test "search filters photos by tag", %{conn: conn, user: user, org: org, album: album} do
+      photo_fixture(album, user, %{filename: "a.jpg", tags: ["beach", "sunset"]})
+      photo_fixture(album, user, %{filename: "b.jpg", tags: ["mountain"]})
+
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/albums/#{album.id}")
+
+      view |> element("#album-search-form") |> render_change(%{"q" => "beach"})
+      html = render(view)
+      assert html =~ "a.jpg"
+      refute html =~ "b.jpg"
+    end
+
+    test "search matches partial tag", %{conn: conn, user: user, org: org, album: album} do
+      photo_fixture(album, user, %{filename: "a.jpg", tags: ["sunset"]})
+
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/albums/#{album.id}")
+
+      view |> element("#album-search-form") |> render_change(%{"q" => "sun"})
+      assert render(view) =~ "a.jpg"
+    end
+
+    test "search is case insensitive", %{conn: conn, user: user, org: org, album: album} do
+      photo_fixture(album, user, %{filename: "a.jpg", tags: ["Beach"]})
+
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/albums/#{album.id}")
+
+      view |> element("#album-search-form") |> render_change(%{"q" => "beach"})
+      assert render(view) =~ "a.jpg"
+    end
+
+    test "empty search shows all photos", %{conn: conn, user: user, org: org, album: album} do
+      photo_fixture(album, user, %{filename: "one.jpg"})
+      photo_fixture(album, user, %{filename: "two.jpg"})
+
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/albums/#{album.id}")
+
+      view |> element("#album-search-form") |> render_change(%{"q" => "xyz"})
+      refute render(view) =~ "one.jpg"
+
+      view |> element("#album-search-form") |> render_change(%{"q" => ""})
+      html = render(view)
+      assert html =~ "one.jpg"
+      assert html =~ "two.jpg"
+    end
+
+    test "no search results shows appropriate message", %{
+      conn: conn,
+      user: user,
+      org: org,
+      album: album
+    } do
+      photo_fixture(album, user, %{filename: "only.jpg"})
+
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/albums/#{album.id}")
+
+      view |> element("#album-search-form") |> render_change(%{"q" => "nomatch"})
+      html = render(view)
+      assert html =~ "No photos match your search"
+      assert html =~ "Try different search terms"
+    end
+
+    test "rename photo updates filename", %{conn: conn, user: user, org: org, album: album} do
+      _photo = photo_fixture(album, user, %{filename: "original.jpg"})
+
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/albums/#{album.id}")
+
+      view |> element("[aria-label='Photo menu']") |> render_click()
+      view |> element("button", "Rename") |> render_click()
+      assert has_element?(view, "#rename-form")
+
+      view
+      |> form("#rename-form", %{"rename" => %{"filename" => "renamed.jpg"}})
+      |> render_submit()
+
+      assert render(view) =~ "renamed.jpg"
+      assert render(view) =~ "Photo renamed"
+    end
+
+    test "edit tags updates photo tags", %{conn: conn, user: user, org: org, album: album} do
+      photo_fixture(album, user, %{filename: "tagged.jpg", tags: []})
+
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/albums/#{album.id}")
+
+      view |> element("[aria-label='Photo menu']") |> render_click()
+      view |> element("button", "Edit tags") |> render_click()
+      assert has_element?(view, "#edit-tags-form")
+
+      view
+      |> form("#edit-tags-form", %{"edit_tags" => %{"tags" => "a, b, c"}})
+      |> render_submit()
+
+      assert render(view) =~ "Tags updated"
+      assert render(view) =~ "a"
+      assert render(view) =~ "b"
+      assert render(view) =~ "c"
+    end
+
+    test "lightbox next respects search", %{conn: conn, user: user, org: org, album: album} do
+      photo_fixture(album, user, %{filename: "first.jpg"})
+      photo_fixture(album, user, %{filename: "second-match.jpg"})
+
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/albums/#{album.id}")
+
+      view |> element("#album-search-form") |> render_change(%{"q" => "second"})
+      # Only one filtered photo; click the lightbox button (index 0)
+      view |> element("button[phx-click='open_lightbox'][phx-value-index='0']") |> render_click()
+      assert has_element?(view, "#lightbox")
+      # Next button should not be present (only one filtered photo)
+      html = render(view)
+      refute html =~ "lightbox_next"
+    end
   end
 
   defp log_in_user(conn, user) do

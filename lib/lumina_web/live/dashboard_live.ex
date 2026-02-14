@@ -10,116 +10,130 @@ defmodule LuminaWeb.DashboardLive do
     {:ok,
      assign(socket,
        orgs: orgs,
+       search_query: "",
        page_title: "Dashboard",
        admin?: user.role == :admin
      )}
   end
 
   @impl true
+  def handle_event("search", %{"q" => q}, socket) do
+    {:noreply, assign(socket, search_query: String.trim(q))}
+  end
+
+  @impl true
   def render(assigns) do
+    q = String.downcase(assigns.search_query || "")
+
+    filtered_orgs =
+      if q == "" do
+        assigns.orgs
+      else
+        Enum.filter(assigns.orgs, fn org ->
+          String.contains?(String.downcase(org.name || ""), q)
+        end)
+      end
+
+    assigns = assign(assigns, :filtered_orgs, filtered_orgs)
+
     ~H"""
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="sm:flex sm:items-center">
-        <div class="sm:flex-auto">
-          <h1 class="text-3xl font-bold text-gray-900">Your Organizations</h1>
-          <p class="mt-2 text-sm text-gray-700">
+    <section>
+      <div class="flex flex-wrap items-end justify-between gap-3 mb-8">
+        <div>
+          <h1 class="text-3xl font-serif font-bold text-base-content text-balance">
+            Your Organizations
+          </h1>
+          <p class="text-sm text-base-content/40 mt-1">
             Manage your photo collections across different organizations.
           </p>
         </div>
-        <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none flex gap-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <form phx-change="search" class="flex-1 min-w-[200px] max-w-xs">
+            <input
+              type="search"
+              name="q"
+              value={@search_query}
+              placeholder="Search organizations..."
+              phx-debounce="200"
+              class="input input-bordered input-sm bg-base-200/60 border-base-300 text-base-content rounded-md w-full"
+            />
+          </form>
           <%= if @admin? do %>
             <.link
               navigate={~p"/admin/orgs"}
-              class="inline-flex items-center justify-center rounded-md bg-gray-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500"
+              class="btn btn-sm btn-ghost rounded-md"
             >
               Manage Organizations
             </.link>
             <.link
               navigate={~p"/orgs/new"}
-              class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+              class="btn btn-sm btn-accent gap-1.5 rounded-md"
             >
-              Create Organization
+              <.icon name="hero-plus" class="size-4" /> Create Organization
             </.link>
           <% else %>
             <.link
               navigate={~p"/join"}
-              class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+              class="btn btn-sm btn-accent gap-1.5 rounded-md"
             >
-              Join Organization
+              <.icon name="hero-user-plus" class="size-4" /> Join Organization
             </.link>
           <% end %>
         </div>
       </div>
 
-      <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <%= for org <- @orgs do %>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <%= for org <- @filtered_orgs do %>
           <.link
             navigate={~p"/orgs/#{org.slug}"}
-            class="relative flex flex-col rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm hover:border-gray-400 hover:shadow-md transition"
+            class="group relative flex flex-col rounded-md border border-base-300 bg-base-200 px-6 py-5 hover:border-base-content/20 hover:shadow-md transition"
           >
-            <h3 class="text-xl font-semibold text-gray-900">{org.name}</h3>
-            <p class="mt-2 text-sm text-gray-500">
+            <h3 class="text-xl font-serif font-semibold text-base-content">{org.name}</h3>
+            <p class="mt-2 text-sm text-base-content/40">
               View albums →
             </p>
           </.link>
         <% end %>
       </div>
 
-      <%= if @orgs == [] do %>
-        <div class="mt-8 text-center">
-          <svg
-            class="mx-auto h-12 w-12 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-            />
-          </svg>
-          <h3 class="mt-2 text-sm font-medium text-gray-900">No organizations</h3>
-          <p class="mt-1 text-sm text-gray-500">
+      <%= if @filtered_orgs == [] do %>
+        <div class="flex flex-col items-center justify-center py-16 text-center">
+          <div class="bg-base-300 rounded-full p-4 mb-4">
+            <.icon name="hero-building-office-2" class="size-8 text-base-content/30" />
+          </div>
+          <h3 class="text-lg font-serif font-semibold text-base-content mb-1">
+            No organizations
+          </h3>
+          <p class="text-sm text-base-content/40 mb-4 max-w-xs">
             <%= if @admin? do %>
               Get started by creating a new organization or manage existing ones.
             <% else %>
               Join an existing organization using an invite link or code from your administrator.
             <% end %>
           </p>
-          <div class="mt-6">
+          <div class="flex flex-wrap gap-3 justify-center">
             <%= if @admin? do %>
-              <.link
-                navigate={~p"/admin/orgs"}
-                class="inline-flex items-center rounded-md bg-gray-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500"
-              >
+              <.link navigate={~p"/admin/orgs"} class="btn btn-sm btn-ghost rounded-md">
                 Manage Organizations
               </.link>
               <.link
                 navigate={~p"/orgs/new"}
-                class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 ml-3"
+                class="btn btn-sm btn-accent gap-1.5 rounded-md"
               >
-                <svg class="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-                </svg>
-                New Organization
+                <.icon name="hero-plus" class="size-4" /> New Organization
               </.link>
             <% else %>
               <.link
                 navigate={~p"/join"}
-                class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+                class="btn btn-sm btn-accent gap-1.5 rounded-md"
               >
-                <svg class="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Join Organization
+                <.icon name="hero-user-plus" class="size-4" /> Join Organization
               </.link>
             <% end %>
           </div>
         </div>
       <% end %>
-    </div>
+    </section>
     """
   end
 end

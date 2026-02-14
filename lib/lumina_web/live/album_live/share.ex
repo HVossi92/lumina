@@ -54,15 +54,15 @@ defmodule LuminaWeb.AlbumLive.Share do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="max-w-2xl mx-auto px-4 py-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-6">
+    <section>
+      <h1 class="text-3xl font-serif font-bold text-base-content mb-6 text-balance">
         Share {@album.name}
       </h1>
 
-      <.form for={@form} phx-submit="create_link" class="space-y-6">
-        <div>
-          <label for="days" class="block text-sm font-medium text-gray-700">
-            Link expires in (days)
+      <.form for={@form} phx-submit="create_link" id="share-form" class="space-y-6">
+        <div class="form-control">
+          <label for="days" class="label">
+            <span class="label-text text-base-content text-sm">Link expires in (days)</span>
           </label>
           <input
             type="number"
@@ -71,21 +71,21 @@ defmodule LuminaWeb.AlbumLive.Share do
             value="7"
             min="1"
             max="365"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            class="input input-bordered input-sm bg-base-200/60 border-base-300 text-base-content rounded-md w-full"
           />
         </div>
 
-        <div>
-          <label for="password" class="block text-sm font-medium text-gray-700">
-            Password (optional)
+        <div class="form-control">
+          <label for="password" class="label">
+            <span class="label-text text-base-content text-sm">Password (optional)</span>
           </label>
           <input
             type="password"
             name="password"
             id="password"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            class="input input-bordered input-sm bg-base-200/60 border-base-300 text-base-content rounded-md w-full"
           />
-          <p class="mt-2 text-sm text-gray-500">
+          <p class="mt-2 text-sm text-base-content/40">
             Leave empty for public access
           </p>
         </div>
@@ -93,58 +93,41 @@ defmodule LuminaWeb.AlbumLive.Share do
         <div class="flex justify-end gap-3">
           <.link
             navigate={~p"/orgs/#{@org.slug}/albums/#{@album.id}"}
-            class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+            class="btn btn-sm btn-ghost rounded-md"
           >
             Cancel
           </.link>
-          <button
-            type="submit"
-            class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
-          >
+          <button type="submit" class="btn btn-sm btn-accent rounded-md">
             Generate Share Link
           </button>
         </div>
       </.form>
 
       <%= if @share_url do %>
-        <div class="mt-8 rounded-md bg-green-50 p-4">
-          <div class="flex">
-            <div class="flex-shrink-0">
-              <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </div>
-            <div class="ml-3 flex-1">
-              <h3 class="text-sm font-medium text-green-800">
-                Share link created!
-              </h3>
-              <div class="mt-2">
-                <div class="flex gap-2">
-                  <input
-                    type="text"
-                    value={@share_url}
-                    readonly
-                    id="share-url-input"
-                    class="flex-1 rounded-md border-gray-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  />
-                  <button
-                    type="button"
-                    phx-click={JS.dispatch("phx:copy", to: "#share-url-input")}
-                    class="rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500"
-                  >
-                    Copy
-                  </button>
-                </div>
-              </div>
+        <div class="mt-8 alert alert-success rounded-md text-sm">
+          <.icon name="hero-check-circle" class="size-5 shrink-0" />
+          <div class="flex-1">
+            <h3 class="font-medium">Share link created!</h3>
+            <div class="mt-2 flex gap-2">
+              <input
+                type="text"
+                value={@share_url}
+                readonly
+                id="share-url-input"
+                class="input input-bordered input-sm flex-1 bg-base-200/60 border-base-300 text-base-content rounded-md font-mono text-xs"
+              />
+              <button
+                type="button"
+                phx-click={JS.dispatch("phx:copy", to: "#share-url-input")}
+                class="btn btn-sm btn-success rounded-md"
+              >
+                Copy
+              </button>
             </div>
           </div>
         </div>
       <% end %>
-    </div>
+    </section>
     """
   end
 end

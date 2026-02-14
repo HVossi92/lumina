@@ -151,61 +151,54 @@ defmodule LuminaWeb.JoinLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="max-w-2xl mx-auto px-4 py-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-6">Join Organization</h1>
+    <section>
+      <h1 class="text-3xl font-serif font-bold text-base-content mb-6 text-balance">
+        Join Organization
+      </h1>
 
       <%= if @error do %>
-        <div class="mb-6 p-4 rounded-md bg-red-50 text-red-800">
-          {@error}
+        <div class="mb-6 alert alert-error rounded-md">
+          <.icon name="hero-exclamation-circle" class="size-5 shrink-0" />
+          <span>{@error}</span>
         </div>
       <% end %>
 
       <%= if @invite do %>
-        <div class="mb-6 p-6 rounded-lg border border-gray-200 bg-gray-50">
-          <h2 class="text-lg font-semibold text-gray-900">You're invited to join</h2>
-          <p class="mt-2 text-2xl font-bold text-indigo-600">{@invite.org.name}</p>
+        <div class="mb-6 p-6 rounded-md border border-base-300 bg-base-200">
+          <h2 class="text-lg font-serif font-semibold text-base-content">You're invited to join</h2>
+          <p class="mt-2 text-2xl font-serif font-bold text-accent">{@invite.org.name}</p>
           <.form for={@form} id="join-form" phx-submit="redeem" phx-change="validate" class="mt-6">
             <input type="hidden" name="join[token]" value={@form.params["token"]} />
-            <button
-              type="submit"
-              class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
-            >
+            <button type="submit" class="btn btn-accent rounded-md">
               Join Organization
             </button>
           </.form>
         </div>
       <% else %>
         <.form for={@form} id="join-form" phx-submit="redeem" phx-change="validate" class="space-y-6">
-          <div>
+          <div class="form-control">
             <.input
               field={@form[:token]}
               type="text"
               label="Invite code or paste the full invite link"
               placeholder="Paste your invite code or link here"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             />
-            <p class="mt-2 text-sm text-gray-500">
+            <p class="mt-2 text-sm text-base-content/40">
               Enter the code shared by your administrator, or paste the full invite URL.
             </p>
           </div>
           <div class="flex justify-end">
-            <button
-              type="submit"
-              class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
-            >
+            <button type="submit" class="btn btn-accent rounded-md">
               Join
             </button>
           </div>
         </.form>
       <% end %>
 
-      <.link
-        navigate={~p"/"}
-        class="mt-6 inline-block text-sm text-gray-500 hover:text-gray-700"
-      >
+      <.link navigate={~p"/"} class="mt-6 inline-block btn btn-ghost btn-sm rounded-md">
         ← Back to dashboard
       </.link>
-    </div>
+    </section>
     """
   end
 end

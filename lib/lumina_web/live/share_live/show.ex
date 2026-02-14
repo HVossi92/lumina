@@ -58,107 +58,86 @@ defmodule LuminaWeb.ShareLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="max-w-7xl mx-auto px-4 py-8">
-      <%= if @error do %>
-        <div class="text-center py-12">
-          <svg
-            class="mx-auto h-12 w-12 text-red-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-            />
-          </svg>
-          <h1 class="mt-4 text-2xl font-bold text-gray-900">{@error}</h1>
-        </div>
-      <% else %>
-        <%= if @password_required and not @authenticated do %>
-          <div class="max-w-md mx-auto">
-            <div class="text-center mb-6">
-              <svg
-                class="mx-auto h-12 w-12 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                />
-              </svg>
-              <h1 class="mt-4 text-2xl font-bold text-gray-900">Password Required</h1>
-            </div>
+    <div class="min-h-screen bg-base-100">
+      <%!-- Minimal Lumina header for public share --%>
+      <header class="border-b border-base-300 px-4 py-3">
+        <a href="/" class="flex w-fit items-center gap-2.5">
+          <.icon name="hero-photo" class="size-5 text-accent" />
+          <span class="font-serif font-bold text-base-content tracking-tight">Lumina</span>
+        </a>
+      </header>
 
-            <form phx-submit="check_password" class="space-y-4">
-              <div>
-                <label for="password" class="sr-only">Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  id="password"
-                  placeholder="Enter password"
-                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  required
-                  autofocus
-                />
-              </div>
-              <button
-                type="submit"
-                class="w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
-              >
-                Access Album
-              </button>
-            </form>
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <%= if @error do %>
+          <div class="flex flex-col items-center justify-center py-16 text-center">
+            <div class="bg-error/10 rounded-full p-4 mb-4">
+              <.icon name="hero-exclamation-triangle" class="size-8 text-error" />
+            </div>
+            <h1 class="text-2xl font-serif font-bold text-base-content">{@error}</h1>
           </div>
         <% else %>
-          <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">{@album.name}</h1>
-            <%= if @album.description do %>
-              <p class="mt-2 text-gray-600">{@album.description}</p>
-            <% end %>
-          </div>
+          <%= if @password_required and not @authenticated do %>
+            <div class="max-w-md mx-auto">
+              <div class="text-center mb-6">
+                <div class="bg-base-300 rounded-full p-4 inline-flex mb-4">
+                  <.icon name="hero-lock-closed" class="size-8 text-base-content/30" />
+                </div>
+                <h1 class="text-2xl font-serif font-bold text-base-content">Password Required</h1>
+              </div>
 
-          <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            <%= for photo <- @photos do %>
-              <div class="aspect-square">
-                <img
-                  src={~p"/uploads/thumbnails/#{Path.basename(photo.thumbnail_path)}"}
-                  data-original-src={~p"/uploads/originals/#{Path.basename(photo.original_path)}"}
-                  onerror="if(!this.dataset.fallbackAttempted){this.dataset.fallbackAttempted='true';this.src=this.dataset.originalSrc}"
-                  alt={photo.filename}
-                  class="h-full w-full object-cover rounded-lg"
-                />
+              <form phx-submit="check_password" id="share-password-form" class="space-y-4">
+                <div class="form-control">
+                  <label for="password" class="sr-only">Password</label>
+                  <input
+                    type="password"
+                    name="password"
+                    id="password"
+                    placeholder="Enter password"
+                    class="input input-bordered input-sm bg-base-200/60 border-base-300 text-base-content rounded-md w-full"
+                    required
+                    autofocus
+                  />
+                </div>
+                <button type="submit" class="btn btn-accent w-full rounded-md">
+                  Access Album
+                </button>
+              </form>
+            </div>
+          <% else %>
+            <div class="mb-8">
+              <h1 class="text-3xl font-serif font-bold text-base-content text-balance">
+                {@album.name}
+              </h1>
+              <%= if @album.description do %>
+                <p class="mt-2 text-base-content/60">{@album.description}</p>
+              <% end %>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              <%= for photo <- @photos do %>
+                <div class="aspect-square overflow-hidden rounded-md bg-base-300">
+                  <img
+                    src={~p"/uploads/thumbnails/#{Path.basename(photo.thumbnail_path)}"}
+                    data-original-src={~p"/uploads/originals/#{Path.basename(photo.original_path)}"}
+                    onerror="if(!this.dataset.fallbackAttempted){this.dataset.fallbackAttempted='true';this.src=this.dataset.originalSrc}"
+                    alt={photo.filename}
+                    class="h-full w-full object-cover"
+                  />
+                </div>
+              <% end %>
+            </div>
+
+            <%= if @photos == [] do %>
+              <div class="flex flex-col items-center justify-center py-16 text-center">
+                <div class="bg-base-300 rounded-full p-4 mb-4">
+                  <.icon name="hero-photo" class="size-8 text-base-content/30" />
+                </div>
+                <p class="text-sm text-base-content/40">This album is empty</p>
               </div>
             <% end %>
-          </div>
-
-          <%= if @photos == [] do %>
-            <div class="text-center py-12">
-              <svg
-                class="mx-auto h-12 w-12 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-              <p class="mt-2 text-sm text-gray-500">This album is empty</p>
-            </div>
           <% end %>
         <% end %>
-      <% end %>
+      </div>
     </div>
     """
   end

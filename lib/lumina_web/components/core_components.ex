@@ -60,7 +60,7 @@ defmodule LuminaWeb.CoreComponents do
       {@rest}
     >
       <div class={[
-        "alert w-80 sm:w-96 max-w-80 sm:max-w-96 text-wrap",
+        "alert w-80 sm:w-96 max-w-80 sm:max-w-96 text-wrap rounded-md",
         @kind == :info && "alert-info",
         @kind == :error && "alert-error"
       ]}>
@@ -221,7 +221,7 @@ defmodule LuminaWeb.CoreComponents do
             name={@name}
             value="true"
             checked={@checked}
-            class={@class || "checkbox checkbox-sm"}
+            class={@class || "checkbox checkbox-sm checkbox-accent rounded"}
             {@rest}
           />{@label}
         </span>
@@ -239,7 +239,11 @@ defmodule LuminaWeb.CoreComponents do
         <select
           id={@id}
           name={@name}
-          class={[@class || "w-full select", @errors != [] && (@error_class || "select-error")]}
+          class={[
+            @class ||
+              "select select-bordered select-sm bg-base-200/60 border-base-300 text-base-content rounded-md w-full",
+            @errors != [] && (@error_class || "select-error")
+          ]}
           multiple={@multiple}
           {@rest}
         >
@@ -261,7 +265,8 @@ defmodule LuminaWeb.CoreComponents do
           id={@id}
           name={@name}
           class={[
-            @class || "w-full textarea",
+            @class ||
+              "textarea textarea-bordered textarea-sm bg-base-200/60 border-base-300 text-base-content rounded-md w-full",
             @errors != [] && (@error_class || "textarea-error")
           ]}
           {@rest}
@@ -284,7 +289,8 @@ defmodule LuminaWeb.CoreComponents do
           id={@id}
           value={Phoenix.HTML.Form.normalize_value(@type, @value)}
           class={[
-            @class || "w-full input",
+            @class ||
+              "input input-bordered input-sm bg-base-200/60 border-base-300 text-base-content rounded-md w-full",
             @errors != [] && (@error_class || "input-error")
           ]}
           {@rest}

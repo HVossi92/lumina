@@ -45,48 +45,42 @@ defmodule LuminaWeb.AlbumLive.New do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="max-w-2xl mx-auto px-4 py-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-6">
+    <section>
+      <h1 class="text-3xl font-serif font-bold text-base-content mb-6 text-balance">
         Create Album in {@org.name}
       </h1>
 
       <.form for={@form} id="album-form" phx-submit="save" phx-change="validate" class="space-y-6">
-        <div>
+        <div class="form-control">
           <.input
             field={@form[:name]}
             type="text"
             label="Album Name"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            class="input input-bordered input-sm bg-base-200/60 border-base-300 text-base-content rounded-md w-full"
             required
           />
         </div>
 
-        <div>
+        <div class="form-control">
           <.input
             field={@form[:description]}
             type="textarea"
             label="Description (optional)"
             rows="3"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            class="textarea textarea-bordered textarea-sm bg-base-200/60 border-base-300 text-base-content rounded-md w-full"
           />
         </div>
 
         <div class="flex justify-end gap-3">
-          <.link
-            navigate={~p"/orgs/#{@org.slug}"}
-            class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-          >
+          <.link navigate={~p"/orgs/#{@org.slug}"} class="btn btn-sm btn-ghost rounded-md">
             Cancel
           </.link>
-          <button
-            type="submit"
-            class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
-          >
+          <button type="submit" class="btn btn-sm btn-accent rounded-md">
             Create Album
           </button>
         </div>
       </.form>
-    </div>
+    </section>
     """
   end
 end

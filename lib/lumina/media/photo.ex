@@ -14,10 +14,17 @@ defmodule Lumina.Media.Photo do
     define :create
     define :for_album, args: [:album_id]
     define :add_tags
+    define :rename
   end
 
   actions do
     defaults [:read, :update, :destroy]
+
+    update :rename do
+      accept [:filename]
+
+      validate present(:filename)
+    end
 
     create :create do
       accept [

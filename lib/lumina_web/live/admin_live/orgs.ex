@@ -171,18 +171,20 @@ defmodule LuminaWeb.AdminLive.Orgs do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="max-w-5xl mx-auto px-4 py-8">
-      <div class="sm:flex sm:items-center sm:justify-between mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Manage Organizations</h1>
-        <div class="mt-4 sm:mt-0">
-          <.link navigate={~p"/"} class="text-sm text-gray-500 hover:text-gray-700 mr-4">
+    <section>
+      <div class="flex flex-wrap items-end justify-between gap-3 mb-8">
+        <h1 class="text-3xl font-serif font-bold text-base-content text-balance">
+          Manage Organizations
+        </h1>
+        <div class="flex items-center gap-2">
+          <.link navigate={~p"/"} class="btn btn-ghost btn-sm rounded-md">
             ← Dashboard
           </.link>
           <%= if !@form && !@editing_org do %>
             <button
               type="button"
               phx-click="new_org"
-              class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+              class="btn btn-sm btn-accent rounded-md"
             >
               New Organization
             </button>
@@ -196,9 +198,9 @@ defmodule LuminaWeb.AdminLive.Orgs do
           id="org-form"
           phx-submit="save_org"
           phx-change="validate_org"
-          class="mb-8 p-6 rounded-lg border border-gray-200 bg-gray-50"
+          class="mb-8 p-6 rounded-md border border-base-300 bg-base-200"
         >
-          <h2 class="text-lg font-semibold mb-4">
+          <h2 class="text-lg font-serif font-semibold text-base-content mb-4">
             {if @editing_org, do: "Edit Organization", else: "New Organization"}
           </h2>
           <div class="space-y-4">
@@ -206,26 +208,21 @@ defmodule LuminaWeb.AdminLive.Orgs do
               field={@form[:name]}
               type="text"
               label="Name"
-              class="block w-full rounded-md border-gray-300 shadow-sm"
             />
             <.input
               field={@form[:slug]}
               type="text"
               label="Slug"
-              class="block w-full rounded-md border-gray-300 shadow-sm"
             />
           </div>
           <div class="mt-4 flex gap-3">
-            <button
-              type="submit"
-              class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
-            >
+            <button type="submit" class="btn btn-sm btn-accent rounded-md">
               Save
             </button>
             <button
               type="button"
               phx-click="cancel_form"
-              class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+              class="btn btn-sm btn-ghost rounded-md"
             >
               Cancel
             </button>
@@ -234,64 +231,68 @@ defmodule LuminaWeb.AdminLive.Orgs do
       <% end %>
 
       <%= if @new_invite do %>
-        <div class="mb-8 p-6 rounded-lg border-2 border-green-200 bg-green-50">
-          <h3 class="text-lg font-semibold text-green-900 mb-2">Invite link created</h3>
-          <p class="text-sm text-green-800 mb-2">
-            Share this link with users to join <strong>{@new_invite.org.name}</strong>:
-          </p>
-          <div class="flex gap-2 items-center">
-            <input
-              type="text"
-              readonly
-              id="invite-url-input"
-              value={@new_invite.join_url}
-              class="flex-1 rounded-md border-gray-300 bg-white px-3 py-2 text-sm"
-            />
+        <div class="mb-8 alert alert-success rounded-md">
+          <.icon name="hero-check-circle" class="size-5 shrink-0" />
+          <div class="flex-1">
+            <h3 class="font-semibold text-base-content">Invite link created</h3>
+            <p class="text-sm mt-1">
+              Share this link with users to join <strong>{@new_invite.org.name}</strong>:
+            </p>
+            <div class="flex gap-2 items-center mt-2">
+              <input
+                type="text"
+                readonly
+                id="invite-url-input"
+                value={@new_invite.join_url}
+                class="input input-bordered input-sm flex-1 bg-base-200/60 border-base-300 text-base-content rounded-md font-mono text-xs"
+              />
+              <button
+                type="button"
+                phx-click={JS.dispatch("phx:copy", to: "#invite-url-input")}
+                class="btn btn-sm btn-success rounded-md"
+              >
+                Copy
+              </button>
+            </div>
+            <p class="mt-2 text-xs text-base-content/70">
+              Or share the code:
+              <code class="bg-base-300 px-1 rounded font-mono">{@new_invite.token}</code>
+            </p>
             <button
               type="button"
-              phx-click={JS.dispatch("phx:copy", to: "#invite-url-input")}
-              class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white"
+              phx-click="close_invite"
+              class="mt-4 text-sm text-base-content/70 hover:text-base-content"
             >
-              Copy
+              Close
             </button>
           </div>
-          <p class="mt-2 text-xs text-green-700">
-            Or share the code: <code class="bg-green-100 px-1 rounded">{@new_invite.token}</code>
-          </p>
-          <button
-            type="button"
-            phx-click="close_invite"
-            class="mt-4 text-sm text-green-700 hover:text-green-900"
-          >
-            Close
-          </button>
         </div>
       <% end %>
 
-      <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
-        <table class="min-w-full divide-y divide-gray-300">
-          <thead class="bg-gray-50">
+      <div class="overflow-hidden rounded-md border border-base-300">
+        <table class="table">
+          <thead>
             <tr>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Slug</th>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Members</th>
-              <th class="px-4 py-3 text-right text-sm font-semibold text-gray-900">Actions</th>
+              <th class="text-base-content">Name</th>
+              <th class="text-base-content">Slug</th>
+              <th class="text-base-content">Members</th>
+              <th class="text-right text-base-content">Actions</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 bg-white">
+          <tbody>
             <%= for org <- @orgs do %>
               <tr>
-                <td class="px-4 py-3 text-sm text-gray-900">{org.name}</td>
-                <td class="px-4 py-3 text-sm text-gray-500">{org.slug}</td>
-                <td class="px-4 py-3 text-sm text-gray-500">
+                <td class="text-base-content">{org.name}</td>
+                <td class="text-base-content/60">{org.slug}</td>
+                <td class="text-base-content/60">
                   {length(org.memberships || [])}
                 </td>
-                <td class="px-4 py-3 text-right text-sm">
+                <td class="text-right">
                   <button
                     type="button"
                     phx-click="edit_org"
                     phx-value-id={org.id}
-                    class="text-indigo-600 hover:text-indigo-900 mr-4"
+                    class="btn btn-ghost btn-xs text-accent hover:text-accent mr-2"
                   >
                     Edit
                   </button>
@@ -300,7 +301,7 @@ defmodule LuminaWeb.AdminLive.Orgs do
                     phx-click="generate_invite"
                     phx-value-id={org.id}
                     phx-value-role="owner"
-                    class="text-indigo-600 hover:text-indigo-900 mr-4"
+                    class="btn btn-ghost btn-xs text-accent hover:text-accent mr-2"
                   >
                     Invite (owner)
                   </button>
@@ -309,7 +310,7 @@ defmodule LuminaWeb.AdminLive.Orgs do
                     phx-click="generate_invite"
                     phx-value-id={org.id}
                     phx-value-role="member"
-                    class="text-indigo-600 hover:text-indigo-900 mr-4"
+                    class="btn btn-ghost btn-xs text-accent hover:text-accent mr-2"
                   >
                     Invite (member)
                   </button>
@@ -318,7 +319,7 @@ defmodule LuminaWeb.AdminLive.Orgs do
                     phx-click="delete_org"
                     phx-value-id={org.id}
                     data-confirm="Delete this organization? This cannot be undone."
-                    class="text-red-600 hover:text-red-900"
+                    class="btn btn-ghost btn-xs text-error hover:text-error"
                   >
                     Delete
                   </button>
@@ -330,11 +331,11 @@ defmodule LuminaWeb.AdminLive.Orgs do
       </div>
 
       <%= if @orgs == [] && !@form do %>
-        <div class="mt-8 text-center text-gray-500">
+        <div class="mt-8 text-center text-base-content/40">
           <p>No organizations yet. Create one to get started.</p>
         </div>
       <% end %>
-    </div>
+    </section>
     """
   end
 end

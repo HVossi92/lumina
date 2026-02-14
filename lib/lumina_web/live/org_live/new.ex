@@ -46,49 +46,45 @@ defmodule LuminaWeb.OrgLive.New do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="max-w-2xl mx-auto px-4 py-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-6">Create Organization</h1>
+    <section>
+      <h1 class="text-3xl font-serif font-bold text-base-content mb-6 text-balance">
+        Create Organization
+      </h1>
 
       <.form for={@form} id="org-form" phx-submit="save" phx-change="validate" class="space-y-6">
-        <div>
+        <div class="form-control">
           <.input
             field={@form[:name]}
             type="text"
             label="Name"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            class="input input-bordered input-sm bg-base-200/60 border-base-300 text-base-content rounded-md w-full"
             required
           />
         </div>
 
-        <div>
+        <div class="form-control">
           <.input
             field={@form[:slug]}
             type="text"
             label="Slug (URL-friendly name)"
             pattern="[a-z0-9-]+"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            class="input input-bordered input-sm bg-base-200/60 border-base-300 text-base-content rounded-md w-full"
           />
-          <p class="mt-2 text-sm text-gray-500">
+          <p class="mt-2 text-sm text-base-content/40">
             Leave empty to generate from name. Only lowercase letters, numbers, and hyphens allowed.
           </p>
         </div>
 
         <div class="flex justify-end gap-3">
-          <.link
-            navigate={~p"/"}
-            class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-          >
+          <.link navigate={~p"/"} class="btn btn-sm btn-ghost rounded-md">
             Cancel
           </.link>
-          <button
-            type="submit"
-            class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-          >
+          <button type="submit" class="btn btn-sm btn-accent rounded-md">
             Create Organization
           </button>
         </div>
       </.form>
-    </div>
+    </section>
     """
   end
 end
