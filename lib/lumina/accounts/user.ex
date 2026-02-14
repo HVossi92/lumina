@@ -12,6 +12,14 @@ defmodule Lumina.Accounts.User do
   end
 
   authentication do
+    strategies do
+      password :password do
+        identity_field :email
+        hashed_password_field :hashed_password
+        register_action_name :register_with_password
+      end
+    end
+
     add_ons do
       log_out_everywhere do
         apply_on_password_change? true
@@ -46,5 +54,36 @@ defmodule Lumina.Accounts.User do
 
   attributes do
     uuid_primary_key :id
+
+    attribute :email, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :hashed_password, :string do
+      allow_nil? false
+      sensitive? true
+    end
+
+    create_timestamp :inserted_at
+    update_timestamp :updated_at
+  end
+
+  relationships do
+    has_many :org_memberships, Lumina.Accounts.OrgMembership do
+      destination_attribute :user_id
+      public? true
+    end
+
+    many_to_many :orgs, Lumina.Media.Org do
+      through Lumina.Accounts.OrgMembership
+      source_attribute_on_join_resource :user_id
+      destination_attribute_on_join_resource :org_id
+      public? true
+    end
+  end
+
+  identities do
+    identity :unique_email, [:email]
   end
 end

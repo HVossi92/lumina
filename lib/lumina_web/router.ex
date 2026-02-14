@@ -25,24 +25,28 @@ defmodule LuminaWeb.Router do
   scope "/", LuminaWeb do
     pipe_through :browser
 
-    ash_authentication_live_session :authenticated_routes do
-      # in each liveview, add one of the following at the top of the module:
-      #
-      # If an authenticated user must be present:
-      # on_mount {LuminaWeb.LiveUserAuth, :live_user_required}
-      #
-      # If an authenticated user *may* be present:
-      # on_mount {LuminaWeb.LiveUserAuth, :live_user_optional}
-      #
-      # If an authenticated user must *not* be present:
-      # on_mount {LuminaWeb.LiveUserAuth, :live_no_user}
+    # Public share link route (no auth required)
+    live "/share/:token", ShareLive.Show
+
+    # Admin backup download endpoint
+    get "/admin/backup/download/:filename", AdminController, :download_backup
+
+    ash_authentication_live_session :authenticated_routes,
+      on_mount: [{LuminaWeb.LiveUserAuth, :live_user_required}] do
+      live "/", DashboardLive
+      live "/orgs/new", OrgLive.New
+      live "/orgs/:org_slug", OrgLive.Show
+      live "/orgs/:org_slug/albums/new", AlbumLive.New
+      live "/orgs/:org_slug/albums/:album_id", AlbumLive.Show
+      live "/orgs/:org_slug/albums/:album_id/upload", PhotoLive.Upload
+      live "/orgs/:org_slug/albums/:album_id/share", AlbumLive.Share
+      live "/admin/backup", AdminLive.Backup
     end
   end
 
   scope "/", LuminaWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
     auth_routes AuthController, Lumina.Accounts.User, path: "/auth"
     sign_out_route AuthController
 

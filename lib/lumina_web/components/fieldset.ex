@@ -125,7 +125,8 @@ defmodule LuminaWeb.Components.Fieldset do
   attr :class, :string, default: nil, doc: "Custom CSS class for additional styling"
   slot :inner_block, required: true, doc: "Inner block that renders HEEx content"
 
-  defp label(assigns) do
+  @doc false
+  def label(assigns) do
     ~H"""
     <label for={@for} class={["block text-sm font-semibold leading-6", @class]}>
       {render_slot(@inner_block)}

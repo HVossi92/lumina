@@ -1,8 +1,8 @@
 defmodule LuminaWeb.PageControllerTest do
   use LuminaWeb.ConnCase
 
-  test "GET /", %{conn: conn} do
+  test "GET / redirects to sign-in when not authenticated", %{conn: conn} do
     conn = get(conn, ~p"/")
-    assert html_response(conn, 200) =~ "Peace of mind from prototype to production"
+    assert redirected_to(conn) =~ "/sign-in"
   end
 end

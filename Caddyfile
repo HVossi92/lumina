@@ -1,0 +1,8 @@
+{$PHX_HOST:lumina.example.com} {
+    reverse_proxy lumina:4000
+    
+    # Optional: File size limit for uploads
+    request_body {
+        max_size 100MB
+    }
+}

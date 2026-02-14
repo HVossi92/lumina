@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  lumina:
+    build: .
+    container_name: lumina
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/priv/static/uploads
+    environment:
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE}
+      - DATABASE_PATH=/app/data/lumina.db
+      - PHX_HOST=${PHX_HOST}
+      - LUMINA_BACKUP_PASSWORD=${LUMINA_BACKUP_PASSWORD}
+      - TOKEN_SIGNING_SECRET=${TOKEN_SIGNING_SECRET}
+    networks:
+      - web
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - web
+
+networks:
+  web:
+
+volumes:
+  caddy_data:
+  caddy_config:

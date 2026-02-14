@@ -12,7 +12,7 @@ config :ash_oban, pro?: false
 config :lumina, Oban,
   engine: Oban.Engines.Lite,
   notifier: Oban.Notifiers.PG,
-  queues: [default: 10],
+  queues: [default: 10, media: 10],
   repo: Lumina.Repo,
   plugins: [{Oban.Plugins.Cron, []}]
 
@@ -61,7 +61,9 @@ config :spark,
 config :lumina,
   ecto_repos: [Lumina.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [Lumina.Accounts]
+  ash_domains: [Lumina.Accounts, Lumina.Media]
+
+config :ash, :disable_async?, true
 
 # Configure the endpoint
 config :lumina, LuminaWeb.Endpoint,
