@@ -6,12 +6,12 @@ defmodule LuminaWeb.OrgLiveTest do
 
   describe "OrgLive.New" do
     setup do
-      user = user_fixture()
-      {:ok, user: user}
+      admin = admin_fixture()
+      {:ok, admin: admin}
     end
 
-    test "creates new organization", %{conn: conn, user: user} do
-      conn = log_in_user(conn, user)
+    test "creates new organization", %{conn: conn, admin: admin} do
+      conn = log_in_user(conn, admin)
       {:ok, view, _html} = live(conn, ~p"/orgs/new")
 
       view
@@ -25,9 +25,9 @@ defmodule LuminaWeb.OrgLiveTest do
 
     test "creates new organization with slug generated from name when slug left empty", %{
       conn: conn,
-      user: user
+      admin: admin
     } do
-      conn = log_in_user(conn, user)
+      conn = log_in_user(conn, admin)
       {:ok, view, _html} = live(conn, ~p"/orgs/new")
 
       view

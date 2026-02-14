@@ -5,15 +5,27 @@ defmodule LuminaWeb.OrgLive.Show do
   def mount(%{"org_slug" => slug}, _session, socket) do
     user = socket.assigns.current_user
 
-    cover_photo_query =
-      Lumina.Media.Photo
-      |> Ash.Query.sort(inserted_at: :asc)
-      |> Ash.Query.limit(1)
-
     org = Lumina.Media.Org.by_slug!(slug, actor: user)
-    org = Ash.load!(org, [albums: [photos: cover_photo_query]], actor: user, tenant: org.id)
+    org = Ash.load!(org, :memberships, authorize?: false)
 
-    {:ok, assign(socket, org: org, albums: org.albums, page_title: org.name)}
+    # Admin who is not a member cannot access org content (albums/photos)
+    member? = Enum.any?(org.memberships || [], fn m -> m.user_id == user.id end)
+
+    if user.role == :admin and !member? do
+      {:halt,
+       socket
+       |> put_flash(:error, "You can manage organizations but cannot access their content")
+       |> Phoenix.LiveView.redirect(to: ~p"/admin/orgs")}
+    else
+      cover_photo_query =
+        Lumina.Media.Photo
+        |> Ash.Query.sort(inserted_at: :asc)
+        |> Ash.Query.limit(1)
+
+      org = Ash.load!(org, [albums: [photos: cover_photo_query]], actor: user, tenant: org.id)
+
+      {:ok, assign(socket, org: org, albums: org.albums, page_title: org.name)}
+    end
   end
 
   @impl true

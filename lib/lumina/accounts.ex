@@ -9,5 +9,6 @@ defmodule Lumina.Accounts do
     resource Lumina.Accounts.Token
     resource Lumina.Accounts.User
     resource Lumina.Accounts.OrgMembership
+    resource Lumina.Accounts.OrgInvite
   end
 end

@@ -6,6 +6,8 @@ defmodule Lumina.Fixtures do
   alias Lumina.Accounts.User
   alias Lumina.Media.{Org, Album, Photo, ShareLink}
 
+  alias Lumina.Accounts.OrgMembership
+
   def user_fixture(attrs \\ %{}) do
     {:ok, user} =
       User
@@ -14,19 +16,33 @@ defmodule Lumina.Fixtures do
         password: attrs[:password] || "Password123!",
         password_confirmation: attrs[:password] || "Password123!"
       })
+      |> Ash.Changeset.force_change_attribute(:role, attrs[:role] || :user)
       |> Ash.create(authorize?: false)
 
     user
   end
 
+  def admin_fixture(attrs \\ %{}) do
+    user_fixture(Map.merge(attrs, %{role: :admin}))
+  end
+
   def org_fixture(owner, attrs \\ %{}) do
+    name = attrs[:name] || "Test Org #{System.unique_integer()}"
+    slug = attrs[:slug] || "test-org-#{System.unique_integer()}"
+
     {:ok, org} =
-      Org.create(
-        attrs[:name] || "Test Org #{System.unique_integer()}",
-        attrs[:slug] || "test-org-#{System.unique_integer()}",
-        owner.id,
-        actor: owner
-      )
+      Org
+      |> Ash.Changeset.for_create(:create, %{name: name, slug: slug})
+      |> Ash.create(authorize?: false)
+
+    {:ok, _membership} =
+      OrgMembership
+      |> Ash.Changeset.for_create(:create, %{
+        user_id: owner.id,
+        org_id: org.id,
+        role: :owner
+      })
+      |> Ash.create(authorize?: false)
 
     org
   end

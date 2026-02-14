@@ -47,6 +47,10 @@ defmodule Lumina.Accounts.User do
   actions do
     defaults [:read]
 
+    update :update do
+      accept [:role]
+    end
+
     create :register_with_google do
       argument :user_info, :map, allow_nil?: false
       argument :oauth_tokens, :map, allow_nil?: false
@@ -81,6 +85,13 @@ defmodule Lumina.Accounts.User do
 
     attribute :email, :string do
       allow_nil? false
+      public? true
+    end
+
+    attribute :role, :atom do
+      allow_nil? false
+      default :user
+      constraints one_of: [:admin, :user]
       public? true
     end
 

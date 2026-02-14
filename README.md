@@ -14,7 +14,7 @@ Lumina is a multi-organization photo sharing app. Create organizations, add albu
 
 ### Using Lumina
 
-- **Dashboard** (home): After sign-in you see your organizations. Use **New organization** to create one (name + URL-friendly slug).
+- **Dashboard** (home): After sign-in you see your organizations. Regular users **join** existing organizations via an invite link or code from an administrator. Only administrators can create new organizations.
 - **Organization**: Open an org to see its albums. Use **New Album** to add an album (name and optional description).
 - **Album**: Open an album to see its photos. Use **Upload Photos** to add images (JPG, PNG, GIF, WebP; max 10 MB each, up to 10 files). Use **Share** to create a share link.
 - **Share links**: You can set an expiry (days) and an optional password. Anyone with the link can view the album (and enter the password if you set one). Share links work without signing in.
@@ -26,6 +26,18 @@ Use **Sign out** in the navigation to log out.
 ---
 
 ## For admins
+
+### Administrator account
+
+An administrator user is seeded on first run (see [Seeding](#seeding)). Use `LUMINA_ADMIN_EMAIL` and `LUMINA_ADMIN_PASSWORD` to configure the admin account (default: `admin@example.com` / `change-me-in-production`). **Change the password in production.**
+
+Administrators can:
+
+- **Create organizations** (regular users cannot)
+- **Manage organizations** at `/admin/orgs`: list, edit, delete orgs, and **generate invite links/codes**
+- **Invite users**: Share the invite link or code so users can join an organization
+
+Administrators cannot access org content (albums/photos) unless they join an org via invite like any other user.
 
 ### Backup access
 
@@ -73,6 +85,8 @@ Lumina runs with **Docker** and **Caddy** as a reverse proxy. See [docs/DEPLOYME
 
 | Variable                     | Purpose                                                                                  |
 | ---------------------------- | ---------------------------------------------------------------------------------------- |
+| `LUMINA_ADMIN_EMAIL`         | Admin user email (seeded on first run; default: `admin@example.com`)                     |
+| `LUMINA_ADMIN_PASSWORD`      | Admin user password (seeded on first run; default: `change-me-in-production`)            |
 | `SECRET_KEY_BASE`            | Phoenix session/encryption (generate with `mix phx.gen.secret`)                          |
 | `TOKEN_SIGNING_SECRET`       | JWT signing for auth (generate with `mix phx.gen.secret`)                                |
 | `DATABASE_PATH`              | SQLite DB path (default: `/app/data/lumina.db`)                                          |
@@ -158,8 +172,8 @@ Then open [http://localhost:4000](http://localhost:4000). Alternatively: `iex -S
 
 ### Creating users (dev)
 
-- **UI**: Register at `/register` (or use the sign-in page’s register link).
-- **No seed users**: There are no default users; create one via the UI or add a seed in `priv/repo/seeds.exs` if you want.
+- **UI**: Register at `/register` (or use the sign-in page’s register link). Regular users join organizations via invite links or codes from an administrator.
+- **Admin**: Run `mix run priv/repo/seeds.exs` to create the admin user. Configure via `LUMINA_ADMIN_EMAIL` and `LUMINA_ADMIN_PASSWORD` (defaults: `admin@example.com` / `change-me-in-production`). **Change these in production.**
 
 ### Tests and quality
 
@@ -181,7 +195,7 @@ mix precommit
 
 ### Project layout (high level)
 
-- `lib/lumina/` — Domains: `Accounts` (User, Token, OrgMembership), `Media` (Org, Album, Photo, ShareLink), `Jobs` (ProcessUpload)
+- `lib/lumina/` — Domains: `Accounts` (User, Token, OrgMembership, OrgInvite), `Media` (Org, Album, Photo, ShareLink), `Jobs` (ProcessUpload)
 - `lib/lumina_web/` — Router, LiveViews (dashboard, orgs, albums, photos, share, admin backup), auth overrides
 - `priv/repo/migrations/` — Ecto/Ash migrations
 - `test/` — ExUnit tests; use `Lumina.Fixtures` for test data

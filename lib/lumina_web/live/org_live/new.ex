@@ -3,7 +3,16 @@ defmodule LuminaWeb.OrgLive.New do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, form: to_form(%{}, as: "org"), page_title: "New Organization")}
+    user = socket.assigns.current_user
+
+    if user.role != :admin do
+      {:halt,
+       socket
+       |> put_flash(:error, "Only administrators can create organizations")
+       |> Phoenix.LiveView.redirect(to: ~p"/")}
+    else
+      {:ok, assign(socket, form: to_form(%{}, as: "org"), page_title: "New Organization")}
+    end
   end
 
   @impl true
@@ -19,12 +28,7 @@ defmodule LuminaWeb.OrgLive.New do
     name = org_params["name"] || ""
     slug = org_params["slug"] || ""
 
-    case Lumina.Media.Org.create(
-           name,
-           slug,
-           user.id,
-           actor: user
-         ) do
+    case Lumina.Media.Org.create(name, slug, actor: user) do
       {:ok, org} ->
         {:noreply,
          socket

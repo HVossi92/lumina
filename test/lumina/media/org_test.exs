@@ -6,15 +6,21 @@ defmodule Lumina.Media.OrgTest do
   alias Lumina.Media.Org
 
   describe "orgs" do
-    test "creates org with owner membership" do
+    test "creates org (admin only; members added via invite)" do
+      admin = admin_fixture()
       user = user_fixture()
 
-      {:ok, org} = Org.create("My Org", "my-org", user.id, actor: user)
+      {:ok, org} = Org.create("My Org", "my-org", actor: admin)
 
       assert org.name == "My Org"
       assert org.slug == "my-org"
 
-      # Verify owner membership was created
+      # Org has no members initially; add owner via membership
+      {:ok, _} =
+        Lumina.Accounts.OrgMembership
+        |> Ash.Changeset.for_create(:create, %{user_id: user.id, org_id: org.id, role: :owner})
+        |> Ash.create(authorize?: false)
+
       org = Ash.load!(org, :memberships, authorize?: false)
       assert length(org.memberships) == 1
       assert hd(org.memberships).user_id == user.id
@@ -22,27 +28,27 @@ defmodule Lumina.Media.OrgTest do
     end
 
     test "generates slug from name when slug is blank" do
-      user = user_fixture()
+      admin = admin_fixture()
 
-      {:ok, org} = Org.create("My New Organization", "", user.id, actor: user)
+      {:ok, org} = Org.create("My New Organization", "", actor: admin)
 
       assert org.name == "My New Organization"
       assert org.slug == "my-new-organization"
     end
 
     test "slug must be unique" do
-      user = user_fixture()
+      admin = admin_fixture()
 
-      {:ok, _org1} = Org.create("Org 1", "unique-slug", user.id, actor: user)
+      {:ok, _org1} = Org.create("Org 1", "unique-slug", actor: admin)
 
-      assert {:error, _} = Org.create("Org 2", "unique-slug", user.id, actor: user)
+      assert {:error, _} = Org.create("Org 2", "unique-slug", actor: admin)
     end
 
     test "only members can read org" do
       user = user_fixture()
       other_user = user_fixture()
 
-      {:ok, org} = Org.create("Private Org", "private-org", user.id, actor: user)
+      org = org_fixture(user, %{name: "Private Org", slug: "private-org"})
 
       # Owner can read
       assert {:ok, _} = Ash.get(Org, org.id, actor: user)

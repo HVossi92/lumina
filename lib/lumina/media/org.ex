@@ -11,7 +11,7 @@ defmodule Lumina.Media.Org do
   end
 
   code_interface do
-    define :create, args: [:name, :slug, :owner_id]
+    define :create, args: [:name, :slug]
     define :by_slug, args: [:slug]
     define :for_user, args: [:user_id]
   end
@@ -25,24 +25,8 @@ defmodule Lumina.Media.Org do
 
     create :create do
       accept [:name, :slug]
-      argument :owner_id, :uuid, allow_nil?: false
 
       change Lumina.Media.Org.GenerateSlugFromName
-
-      change after_action(fn changeset, org, _context ->
-               owner_id = Ash.Changeset.get_argument(changeset, :owner_id)
-
-               {:ok, _membership} =
-                 Lumina.Accounts.OrgMembership
-                 |> Ash.Changeset.for_create(:create, %{
-                   user_id: owner_id,
-                   org_id: org.id,
-                   role: :owner
-                 })
-                 |> Ash.create(authorize?: false)
-
-               {:ok, org}
-             end)
     end
 
     read :by_slug do
@@ -59,15 +43,17 @@ defmodule Lumina.Media.Org do
 
   policies do
     policy action_type(:create) do
-      authorize_if always()
+      authorize_if Ash.Policy.Check.Builtins.actor_attribute_equals(:role, :admin)
     end
 
     policy action_type(:read) do
       authorize_if expr(exists(memberships, user_id == ^actor(:id)))
+      authorize_if Ash.Policy.Check.Builtins.actor_attribute_equals(:role, :admin)
     end
 
     policy action_type([:update, :destroy]) do
       authorize_if expr(exists(memberships, user_id == ^actor(:id) and role == :owner))
+      authorize_if Ash.Policy.Check.Builtins.actor_attribute_equals(:role, :admin)
     end
   end
 

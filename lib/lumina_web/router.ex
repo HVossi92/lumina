@@ -9,6 +9,7 @@ defmodule LuminaWeb.Router do
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
+    plug LuminaWeb.Plugs.StoreReturnTo
     plug :fetch_live_flash
     plug :put_root_layout, html: {LuminaWeb.Layouts, :root}
     plug :protect_from_forgery
@@ -32,8 +33,11 @@ defmodule LuminaWeb.Router do
     get "/admin/backup/download/:filename", AdminController, :download_backup
 
     ash_authentication_live_session :authenticated_routes,
+      layout: {LuminaWeb.Layouts, :app},
       on_mount: [{LuminaWeb.LiveUserAuth, :live_user_required}] do
       live "/", DashboardLive
+      live "/join", JoinLive
+      live "/join/:token", JoinLive
       live "/orgs/new", OrgLive.New
       live "/orgs/:org_slug", OrgLive.Show
       live "/orgs/:org_slug/albums/new", AlbumLive.New
@@ -41,6 +45,7 @@ defmodule LuminaWeb.Router do
       live "/orgs/:org_slug/albums/:album_id/upload", PhotoLive.Upload
       live "/orgs/:org_slug/albums/:album_id/share", AlbumLive.Share
       live "/admin/backup", AdminLive.Backup
+      live "/admin/orgs", AdminLive.Orgs
     end
   end
 

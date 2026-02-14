@@ -7,7 +7,12 @@ defmodule LuminaWeb.DashboardLive do
 
     orgs = Lumina.Media.Org.for_user!(user.id, actor: user)
 
-    {:ok, assign(socket, orgs: orgs, page_title: "Dashboard")}
+    {:ok,
+     assign(socket,
+       orgs: orgs,
+       page_title: "Dashboard",
+       admin?: user.role == :admin
+     )}
   end
 
   @impl true
@@ -21,13 +26,28 @@ defmodule LuminaWeb.DashboardLive do
             Manage your photo collections across different organizations.
           </p>
         </div>
-        <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-          <.link
-            navigate={~p"/orgs/new"}
-            class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
-          >
-            Create Organization
-          </.link>
+        <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none flex gap-3">
+          <%= if @admin? do %>
+            <.link
+              navigate={~p"/admin/orgs"}
+              class="inline-flex items-center justify-center rounded-md bg-gray-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500"
+            >
+              Manage Organizations
+            </.link>
+            <.link
+              navigate={~p"/orgs/new"}
+              class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+            >
+              Create Organization
+            </.link>
+          <% else %>
+            <.link
+              navigate={~p"/join"}
+              class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+            >
+              Join Organization
+            </.link>
+          <% end %>
         </div>
       </div>
 
@@ -61,17 +81,41 @@ defmodule LuminaWeb.DashboardLive do
             />
           </svg>
           <h3 class="mt-2 text-sm font-medium text-gray-900">No organizations</h3>
-          <p class="mt-1 text-sm text-gray-500">Get started by creating a new organization.</p>
+          <p class="mt-1 text-sm text-gray-500">
+            <%= if @admin? do %>
+              Get started by creating a new organization or manage existing ones.
+            <% else %>
+              Join an existing organization using an invite link or code from your administrator.
+            <% end %>
+          </p>
           <div class="mt-6">
-            <.link
-              navigate={~p"/orgs/new"}
-              class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
-            >
-              <svg class="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-              </svg>
-              New Organization
-            </.link>
+            <%= if @admin? do %>
+              <.link
+                navigate={~p"/admin/orgs"}
+                class="inline-flex items-center rounded-md bg-gray-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500"
+              >
+                Manage Organizations
+              </.link>
+              <.link
+                navigate={~p"/orgs/new"}
+                class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 ml-3"
+              >
+                <svg class="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                </svg>
+                New Organization
+              </.link>
+            <% else %>
+              <.link
+                navigate={~p"/join"}
+                class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+              >
+                <svg class="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Join Organization
+              </.link>
+            <% end %>
           </div>
         </div>
       <% end %>
