@@ -1,77 +1,107 @@
-# Build stage
-FROM hexpm/elixir:1.17.3-erlang-27.1.2-alpine-3.20.3 AS build
+# Find eligible builder and runner images on Docker Hub. We use Ubuntu/Debian
+# instead of Alpine to avoid DNS resolution issues in production.
+#
+# https://hub.docker.com/r/hexpm/elixir/tags?name=ubuntu
+# https://hub.docker.com/_/ubuntu/tags
+#
+# This file is based on these images:
+#
+#   - https://hub.docker.com/r/hexpm/elixir/tags - for the build image
+#   - https://hub.docker.com/_/debian/tags?name=bookworm-slim - for the release image
+#   - https://pkgs.org/ - resource for finding needed packages
+#
+ARG ELIXIR_VERSION=1.17.3
+ARG OTP_VERSION=27.0
+ARG DEBIAN_VERSION=bookworm-20260202-slim
 
-# Install build dependencies (assets use Hex esbuild + Tailwind; no Node.js)
-RUN apk add --no-cache \
-    build-base \
-    git \
-    vips-dev \
-    vips-heif
+ARG BUILDER_IMAGE="docker.io/hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
+ARG RUNNER_IMAGE="docker.io/debian:bookworm-slim"
 
+FROM ${BUILDER_IMAGE} AS builder
+
+# install build dependencies (libvips-dev + libheif-dev for image processing)
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends build-essential git libvips-dev libheif-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+# prepare build dir
 WORKDIR /app
 
-# Install hex + rebar
-RUN mix local.hex --force && \
-    mix local.rebar --force
+# install hex + rebar
+RUN mix local.hex --force \
+  && mix local.rebar --force
 
-# Set build ENV
-ENV MIX_ENV=prod
+# set build ENV
+ENV MIX_ENV="prod"
 
-# Install mix dependencies
+# install mix dependencies
 COPY mix.exs mix.lock ./
-RUN mix deps.get --only prod
+RUN mix deps.get --only $MIX_ENV
+RUN mkdir config
 
-# Copy compile-time config only (better cache when runtime.exs changes)
-COPY config/config.exs config/prod.exs config/
+# copy compile-time config files before we compile dependencies
+# to ensure any relevant config change will trigger the dependencies
+# to be re-compiled.
+COPY config/config.exs config/${MIX_ENV}.exs config/
 RUN mix deps.compile
 
-# Install Tailwind and esbuild executables
 RUN mix assets.setup
 
-# Copy source
 COPY priv priv
+
 COPY lib lib
+
+# Compile the release
 RUN mix compile
 
-# Copy assets and build
 COPY assets assets
+
+# compile assets
 RUN mix assets.deploy
 
-# Runtime config and release overlays (don't require recompile)
+# Changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/
+
 COPY rel rel
 RUN mix release
 
-# Runtime stage
-FROM alpine:3.20.3
+# start a new build stage so that the final image will only contain
+# the compiled release and other runtime necessities
+FROM ${RUNNER_IMAGE} AS final
 
-# Install runtime dependencies
-RUN apk add --no-cache \
-    openssl \
-    ncurses-libs \
-    vips \
-    vips-heif \
-    tar
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates libvips42 libheif1 \
+  && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+# Set the locale
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
+  && locale-gen
 
-# Create non-root user
-RUN adduser -D -h /app lumina
-USER lumina
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
-# Copy release from build stage
-COPY --from=build --chown=lumina:lumina /app/_build/prod/rel/lumina ./
+WORKDIR "/app"
+RUN chown nobody /app
 
-# Set environment
-ENV HOME=/app
-ENV MIX_ENV=prod
+# set runner ENV
+ENV MIX_ENV="prod"
 ENV PORT=4000
 
-# Create data directories
-RUN mkdir -p /app/data
-RUN mkdir -p /app/priv/static/uploads/originals
-RUN mkdir -p /app/priv/static/uploads/thumbnails
+# Only copy the final release from the build stage
+COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/lumina ./
+
+# Lumina: create data and upload directories (after copy so they persist)
+RUN mkdir -p /app/data /app/priv/static/uploads/originals /app/priv/static/uploads/thumbnails \
+  && chown -R nobody /app
+
+USER nobody
+
+# If using an environment that doesn't automatically reap zombie processes, it is
+# advised to add an init process such as tini via `apt-get install`
+# above and adding an entrypoint. See https://github.com/krallin/tini for details
+# ENTRYPOINT ["/tini", "--"]
 
 EXPOSE 4000
 
-CMD ["bin/lumina", "start"]
+CMD ["/app/bin/server"]

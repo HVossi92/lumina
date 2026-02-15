@@ -18,19 +18,6 @@ defmodule Lumina.Release do
     {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
   end
 
-  def seeds do
-    load_app()
-    Application.ensure_all_started(@app)
-
-    seeds_path = Application.app_dir(@app, "priv/repo/seeds.exs")
-
-    if File.exists?(seeds_path) do
-      Code.eval_file(seeds_path)
-    else
-      raise "Seeds file not found at #{seeds_path}"
-    end
-  end
-
   defp repos do
     Application.fetch_env!(@app, :ecto_repos)
   end

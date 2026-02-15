@@ -2,6 +2,7 @@ services:
   lumina:
     build: .
     container_name: lumina
+    pull_policy: always
     restart: unless-stopped
     ports:
       - '4000:4000'
@@ -14,7 +15,6 @@ services:
       - SECRET_KEY_BASE=${SECRET_KEY_BASE}
       - DATABASE_PATH=/app/data/lumina.db
       - PHX_HOST=${PHX_HOST}
-      - LUMINA_BACKUP_PASSWORD=${LUMINA_BACKUP_PASSWORD}
       - TOKEN_SIGNING_SECRET=${TOKEN_SIGNING_SECRET}
       - LUMINA_ADMIN_EMAIL=${LUMINA_ADMIN_EMAIL:-admin@example.com}
       - LUMINA_ADMIN_PASSWORD=${LUMINA_ADMIN_PASSWORD:-change-me-in-production}

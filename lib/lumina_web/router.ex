@@ -24,14 +24,15 @@ defmodule LuminaWeb.Router do
     plug :set_actor, :user
   end
 
+  pipeline :require_admin do
+    plug LuminaWeb.Plugs.RequireAdmin
+  end
+
   scope "/", LuminaWeb do
     pipe_through :browser
 
     # Public share link route (no auth required)
     live "/share/:token", ShareLive.Show
-
-    # Admin backup download endpoint
-    get "/admin/backup/download/:filename", AdminController, :download_backup
 
     ash_authentication_live_session :authenticated_routes,
       layout: {LuminaWeb.Layouts, :app},
@@ -53,6 +54,12 @@ defmodule LuminaWeb.Router do
       live "/admin/backup", AdminLive.Backup
       live "/admin/orgs", AdminLive.Orgs
     end
+  end
+
+  scope "/", LuminaWeb do
+    pipe_through [:browser, :require_admin]
+
+    get "/admin/backup/download/:filename", AdminController, :download_backup
   end
 
   scope "/", LuminaWeb do
