@@ -2,9 +2,38 @@
 
 Lumina is a multi-organization photo sharing app. Create organizations, add albums, upload photos, and share albums via time-limited or password-protected links.
 
+## Table of contents
+
+- [What is Lumina?](#what-is-lumina)
+- [Requirements](#requirements)
+- [How to use Lumina](#how-to-use-lumina)
+- [Docker build and deployment](#docker-build-and-deployment)
+- [Tech stack](#tech-stack)
+- [For admins](#for-admins)
+- [For developers](#for-developers)
+- [Documentation](#documentation)
+- [Learn more](#learn-more)
+
 ---
 
-## For users
+## What is Lumina?
+
+Lumina lets teams and families share photos in a simple, private way. You create **organizations** (e.g. “Family” or “Soccer Club”), add **albums** inside them, and **upload photos**. You can then **share** an album with anyone via a link—optionally with an expiry date and/or password—so they can view the photos without signing in. Regular users join organizations via invite links or codes from an administrator. The app supports email/password sign-up and optional **Sign in with Google**.
+
+---
+
+## Requirements
+
+- **Elixir** ~> 1.15 and **Erlang/OTP** 24+
+- **libvips** (for image processing and thumbnails)
+
+Assets (JS/CSS) are built with the Hex-based **esbuild** and **Tailwind** Mix tasks; Node.js is not required for development or production builds.
+
+For **Docker** deployment, only Docker and Docker Compose are required on the host; the image includes all runtime dependencies.
+
+---
+
+## How to use Lumina
 
 ### Getting started
 
@@ -12,7 +41,7 @@ Lumina is a multi-organization photo sharing app. Create organizations, add albu
 2. **Sign up**: Click **Register** and create an account with email and password, or use **Sign in with Google** (see [Google OAuth setup](#google-oauth) below).
 3. **Sign in**: Use **Sign in** with your email and password or **Sign in with Google**.
 
-### Using Lumina
+### Using the app
 
 - **Dashboard** (home): After sign-in you see your organizations. Regular users **join** existing organizations via an invite link or code from an administrator. Only administrators can create new organizations.
 - **Organization**: Open an org to see its albums. Use **New Album** to add an album (name and optional description).
@@ -25,55 +54,39 @@ Use **Sign out** in the navigation to log out.
 
 ---
 
-## For admins
+## Docker build and deployment
 
-### Administrator account
+Lumina runs with **Docker** and **Caddy** as a reverse proxy. A full step-by-step guide (Fedora VPS, Hetzner, Cloudflare) is in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Short version:
 
-An administrator user is seeded on first run (see [Seeding](#seeding)). Use `LUMINA_ADMIN_EMAIL` and `LUMINA_ADMIN_PASSWORD` to configure the admin account (default: `admin@example.com` / `change-me-in-production`). **Change the password in production.**
+### Prerequisites
 
-Administrators can:
+- Docker and Docker Compose on the host.
 
-- **Create organizations** (regular users cannot)
-- **Manage organizations** at `/admin/orgs`: list, edit, delete orgs, and **generate invite links/codes**
-- **Invite users**: Share the invite link or code so users can join an organization
+### Configure
 
-Administrators cannot access org content (albums/photos) unless they join an org via invite like any other user.
-
-### Backup access
-
-- Go to **/admin/backup** (you must be signed in).
-- Enter the **backup password** (set by ops via `LUMINA_BACKUP_PASSWORD`).
-- After authentication you can **Download System Backup**. The download includes the SQLite database and all uploaded photos (originals and thumbnails).
-
-Use this for manual backups or to restore data on another instance.
-
----
-
-## For ops
-
-### Deploying Lumina
-
-Lumina runs with **Docker** and **Caddy** as a reverse proxy. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full guide (Fedora VPS, Hetzner, Cloudflare). Short version:
-
-1. **Prerequisites**: Docker and Docker Compose on the host.
-2. **Configure**: Copy `.env.example` to `.env` and set your secrets (the container loads `.env` via `env_file`; the app reads them at runtime in production):
+1. Copy `.env.example` to `.env` on the host.
+2. Set your secrets (the container loads `.env` via `env_file`; the app reads them at runtime in production):
    - `SECRET_KEY_BASE` — from `mix phx.gen.secret`
    - `TOKEN_SIGNING_SECRET` — from `mix phx.gen.secret`
    - `PHX_HOST` — your domain (e.g. `lumina.yourdomain.com`)
    - `LUMINA_BACKUP_PASSWORD` — password for the admin backup page
    - (Optional) `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` for [Google sign-in](#google-oauth)
-3. **Run**:
-   ```bash
-   docker-compose up -d --build
-   ```
-4. **Migrations** (first run or after schema changes):
-   ```bash
-   docker-compose exec lumina bin/lumina eval "Lumina.Release.migrate"
-   ```
+
+### Build and run
+
+```bash
+docker-compose up -d --build
+```
+
+### Migrations (first run or after schema changes)
+
+```bash
+docker-compose exec lumina bin/lumina eval "Lumina.Release.migrate"
+```
 
 ### Where to store secrets (open source)
 
-**Never commit secrets to the repository.** The app reads secrets from **environment variables** only; config files (e.g. `config/dev.exs`, `config/runtime.exs`) only reference `System.get_env(...)` and never contain real values.
+**Never commit secrets to the repository.** The app reads secrets from **environment variables** only; config files only reference `System.get_env(...)` and never contain real values.
 
 - **Local development**: Copy `.env.example` to `.env`, fill in your values. `.env` is gitignored. Load it before starting the app (e.g. `source .env` or use a tool that loads `.env`).
 - **Docker Compose**: The Lumina service uses `env_file: .env`, so all variables from `.env` are loaded into the container at runtime (the file is not copied into the image). Create `.env` from `.env.example` on the host; keep `.env` out of version control.
@@ -150,6 +163,38 @@ If these are not set, the Google sign-in option is unavailable; email/password a
 
 ---
 
+## Tech stack
+
+- **Phoenix** (LiveView), **Ash** (resources, policies, multitenancy), **AshAuthentication** (JWT/session)
+- **SQLite** (AshSqlite), **Oban** (background jobs, e.g. thumbnail generation)
+- **Tailwind CSS**, **libvips** (Vix) for image processing
+
+---
+
+## For admins
+
+### Administrator account
+
+An administrator user is seeded on first run (see [Creating users (dev)](#creating-users-dev)). Use `LUMINA_ADMIN_EMAIL` and `LUMINA_ADMIN_PASSWORD` to configure the admin account (default: `admin@example.com` / `change-me-in-production`). **Change the password in production.**
+
+Administrators can:
+
+- **Create organizations** (regular users cannot)
+- **Manage organizations** at `/admin/orgs`: list, edit, delete orgs, and **generate invite links/codes**
+- **Invite users**: Share the invite link or code so users can join an organization
+
+Administrators cannot access org content (albums/photos) unless they join an org via invite like any other user.
+
+### Backup access
+
+- Go to **/admin/backup** (you must be signed in).
+- Enter the **backup password** (set by ops via `LUMINA_BACKUP_PASSWORD`).
+- After authentication you can **Download System Backup**. The download includes the SQLite database and all uploaded photos (originals and thumbnails).
+
+Use this for manual backups or to restore data on another instance.
+
+---
+
 ## For developers
 
 ### Setup
@@ -187,12 +232,6 @@ Before committing, run the full precommit check (compile with warnings as errors
 mix precommit
 ```
 
-### Tech stack
-
-- **Phoenix** (LiveView), **Ash** (resources, policies, multitenancy), **AshAuthentication** (JWT/session)
-- **SQLite** (AshSqlite), **Oban** (background jobs, e.g. thumbnail generation)
-- **Tailwind CSS**, **libvips** (Vix) for image processing
-
 ### Project layout (high level)
 
 - `lib/lumina/` — Domains: `Accounts` (User, Token, OrgMembership, OrgInvite), `Media` (Org, Album, Photo, ShareLink), `Jobs` (ProcessUpload)
@@ -212,9 +251,17 @@ mix precommit
 
 ---
 
+## Documentation
+
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — Step-by-step deployment (Fedora VPS, Docker, Caddy, Cloudflare)
+- [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) — Setup from scratch with Igniter (prerequisites, init, verify)
+- [docs/LUMINA_IMPLEMENTATION_PLAN.md](docs/LUMINA_IMPLEMENTATION_PLAN.md) — Full implementation plan and architecture reference
+- [docs/QUICK_START.md](docs/QUICK_START.md) — Quick reference: igniter command and next steps
+
+---
+
 ## Learn more
 
 - [Phoenix deployment](https://hexdocs.pm/phoenix/deployment.html)
 - [Phoenix guides](https://hexdocs.pm/phoenix/overview.html)
 - [Ash Framework](https://ash-hq.org/)
-- [Deployment guide for this app](docs/DEPLOYMENT.md)

@@ -101,35 +101,25 @@ docker-compose exec lumina sh
 
 ## Environment Variables
 
-All environment variables should be set in `.env`:
+All environment variables should be set in `.env`. See README for full table. Required and common:
 
-- `SECRET_KEY_BASE` - Phoenix secret key (generate with `mix phx.gen.secret`)
-- `TOKEN_SIGNING_SECRET` - JWT signing secret (generate with `mix phx.gen.secret`)
-- `DATABASE_PATH` - Path to SQLite database (default: `/app/data/lumina.db`)
-- `PHX_HOST` - Your domain name (e.g., `lumina.yourdomain.com`)
-- `LUMINA_BACKUP_PASSWORD` - Password for admin backup page
-- `PORT` - Application port (default: `4000`)
-- `POOL_SIZE` - Database pool size (default: `5`)
+- `SECRET_KEY_BASE` - Phoenix secret (generate with `mix phx.gen.secret`)
+- `TOKEN_SIGNING_SECRET` - JWT signing (generate with `mix phx.gen.secret`)
+- `PHX_HOST` - Your domain (e.g. `lumina.yourdomain.com`)
+- `LUMINA_BACKUP_PASSWORD` - Password for `/admin/backup`
+- `LUMINA_ADMIN_EMAIL` - Admin user email (seeded on first run; default `admin@example.com`)
+- `LUMINA_ADMIN_PASSWORD` - Admin user password (seeded; default `change-me-in-production` — change in production)
+- `DATABASE_PATH` - SQLite path (default `/app/data/lumina.db`)
+- `PORT` - App port (default `4000`), `POOL_SIZE` - DB pool (default `5`)
+
+Optional: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI` for Sign in with Google (see README).
 
 ## Production Checklist
 
-- [ ] Set strong `SECRET_KEY_BASE`
-- [ ] Set strong `TOKEN_SIGNING_SECRET`
-- [ ] Set strong `LUMINA_BACKUP_PASSWORD`
-- [ ] Configure domain in Cloudflare
-- [ ] SSL/TLS enabled (via Caddy)
-- [ ] Firewall configured (allow ports 80, 443)
-- [ ] Regular backups scheduled
-- [ ] Monitoring set up
-
-## Security Notes
-
-1. Never commit `.env` file to version control
-2. Use strong, random passwords for all secrets
-3. Keep dependencies up to date
-4. Enable firewall on VPS
-5. Use Cloudflare for DDoS protection
-6. Regularly backup data and uploads
+- [ ] Set strong `SECRET_KEY_BASE`, `TOKEN_SIGNING_SECRET`, `LUMINA_BACKUP_PASSWORD`; change `LUMINA_ADMIN_PASSWORD`
+- [ ] Never commit `.env`; use strong random secrets; keep deps up to date
+- [ ] Configure domain in Cloudflare; SSL/TLS (via Caddy); firewall (ports 80, 443); Cloudflare for DDoS
+- [ ] Regular backups (e.g. `/admin/backup` or volume copy); monitoring
 
 ## File Storage
 
@@ -140,10 +130,4 @@ Both directories are mounted as volumes and persist across container restarts.
 
 ## Scaling Considerations
 
-For production use with many users:
-
-1. Consider using PostgreSQL instead of SQLite
-2. Move uploads to S3-compatible storage
-3. Add Redis for caching
-4. Use separate Oban queues for different job types
-5. Enable CDN for static assets
+For many users: consider PostgreSQL, S3-compatible storage for uploads, and Redis/caching. See README for more.

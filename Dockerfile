@@ -1,14 +1,12 @@
 # Build stage
 FROM hexpm/elixir:1.17.3-erlang-27.1.2-alpine-3.20.3 AS build
 
-# Install build dependencies
+# Install build dependencies (assets use Hex esbuild + Tailwind; no Node.js)
 RUN apk add --no-cache \
     build-base \
     git \
     vips-dev \
-    vips-heif \
-    nodejs \
-    npm
+    vips-heif
 
 WORKDIR /app
 
@@ -32,8 +30,7 @@ COPY priv priv
 # Copy assets
 COPY assets assets
 
-# Install npm dependencies and compile assets
-RUN cd assets && npm install
+# Compile assets (esbuild + Tailwind via Mix)
 RUN mix assets.deploy
 
 # Compile release
