@@ -69,9 +69,10 @@ defmodule LuminaWeb.Router do
     sign_out_route AuthController
 
     # Remove these if you'd like to use your own authentication views
-    sign_in_route register_path: "/register",
+    sign_in_route register_path: nil,
                   reset_path: "/reset",
                   auth_routes_prefix: "/auth",
+                  layout: {LuminaWeb.Layouts, :auth},
                   on_mount: [{LuminaWeb.LiveUserAuth, :live_no_user}],
                   overrides: [
                     Elixir.AshAuthentication.Phoenix.Overrides.DaisyUI,

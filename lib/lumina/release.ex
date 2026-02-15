@@ -5,6 +5,20 @@ defmodule Lumina.Release do
   """
   @app :lumina
 
+  def prepare do
+    load_app()
+
+    for repo <- repos() do
+      case repo.__adapter__().storage_up(repo.config()) do
+        :ok -> :ok
+        {:error, :already_up} -> :ok
+        {:error, reason} -> raise "Failed to create database: #{inspect(reason)}"
+      end
+    end
+
+    migrate()
+  end
+
   def migrate do
     load_app()
 

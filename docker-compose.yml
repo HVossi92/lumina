@@ -1,6 +1,6 @@
 services:
   lumina:
-    build: .
+    image: ghcr.io/hvossi92/lumina:latest
     container_name: lumina
     pull_policy: always
     restart: unless-stopped

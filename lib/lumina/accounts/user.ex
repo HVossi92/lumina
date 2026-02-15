@@ -45,7 +45,7 @@ defmodule Lumina.Accounts.User do
   end
 
   actions do
-    defaults [:read]
+    defaults [:read, :destroy]
 
     update :update do
       accept [:role]
@@ -77,6 +77,11 @@ defmodule Lumina.Accounts.User do
   policies do
     bypass AshAuthentication.Checks.AshAuthenticationInteraction do
       authorize_if always()
+    end
+
+    # Block public registration: only allow when actor is present (e.g. seeds use authorize?: false).
+    policy action(:register_with_password) do
+      forbid_if always()
     end
   end
 

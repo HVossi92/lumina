@@ -12,6 +12,33 @@ defmodule LuminaWeb.Layouts do
   embed_templates "layouts/*"
 
   @doc """
+  Renders the auth (sign-in) layout: logo, Lumina name, and optional admin sign-in toggle.
+  Used for /sign-in and related auth pages.
+  """
+  def auth(assigns) do
+    ~H"""
+    <div class="min-h-screen flex flex-col items-center justify-center bg-base-100 text-base-content px-4 py-8">
+      <.link navigate={~p"/"} class="flex items-center gap-2.5 mb-8">
+        <.icon name="hero-photo" class="size-5 text-accent" />
+        <span class="font-serif font-bold text-lg text-base-content tracking-tight">Lumina</span>
+      </.link>
+      <div class="w-full max-w-sm">
+        {@inner_content}
+      </div>
+      <button
+        type="button"
+        id="toggle-admin-sign-in"
+        class="mt-6 text-sm text-base-content/60 hover:text-base-content transition-colors"
+        phx-hook="AdminSignInToggle"
+      >
+        Admin sign in
+      </button>
+    </div>
+    <.flash_group flash={assigns[:flash] || %{}} />
+    """
+  end
+
+  @doc """
   Renders your app layout.
 
   This function is typically invoked from every template,

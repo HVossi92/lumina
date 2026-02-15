@@ -82,20 +82,20 @@ ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
 WORKDIR "/app"
-RUN chown nobody /app
 
 # set runner ENV
 ENV MIX_ENV="prod"
 ENV PORT=4000
 
 # Only copy the final release from the build stage
-COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/lumina ./
+COPY --from=builder /app/_build/${MIX_ENV}/rel/lumina ./
 
 # Lumina: create data and upload directories (after copy so they persist)
-RUN mkdir -p /app/data /app/priv/static/uploads/originals /app/priv/static/uploads/thumbnails \
-  && chown -R nobody /app
+RUN mkdir -p /app/data /app/priv/static/uploads/originals /app/priv/static/uploads/thumbnails
 
-USER nobody
+# Run as root so the app can write to bind-mounted volumes (./data, ./uploads)
+# without permission issues. For hardened deployments, use an entrypoint that
+# chowns and runs as non-root.
 
 # If using an environment that doesn't automatically reap zombie processes, it is
 # advised to add an init process such as tini via `apt-get install`
@@ -104,4 +104,4 @@ USER nobody
 
 EXPOSE 4000
 
-CMD ["/app/bin/server"]
+CMD ["/app/bin/migrate_and_server"]

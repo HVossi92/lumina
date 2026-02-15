@@ -8,7 +8,13 @@ defmodule LuminaWeb.AuthOverrides do
 
   alias AshAuthentication.Phoenix.Components
 
-  # Lumina branding on auth pages
+  # OAuth first; hide banner (logo + Lumina are in the auth layout)
+  override Components.SignIn do
+    set :strategy_display_order, :links_first
+    set :show_banner, false
+  end
+
+  # Lumina branding on auth pages (used if show_banner is true elsewhere)
   override Components.Banner do
     set :text, "Lumina"
     set :image_url, nil

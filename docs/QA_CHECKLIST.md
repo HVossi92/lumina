@@ -13,16 +13,16 @@ Lumina is a multi-organization photo sharing app. Use this checklist to manually
 
 ## 1. Authentication
 
-### Sign up
+### Sign up (invite-only, OAuth only)
 
-- [ ] Open `/register`, submit valid email + password; account created and redirected (e.g. dashboard or confirm step).
-- [ ] Submit invalid data (e.g. short password, invalid email); errors shown, no redirect.
+- [ ] Without invite: open `/sign-in`, sign in with Google; if new user, account is not created; error "You need an invitation to sign up" and redirect to sign-in.
+- [ ] With invite: open `/join/:token` (valid token), redirect to sign-in with return_to; sign in with Google; account created and redirected to join page; redeem invite and join org.
 
 ### Sign in
 
-- [ ] Sign in with correct email/password; redirect to dashboard (or `return_to` if set).
-- [ ] Sign in with wrong password; error shown, stay on sign-in.
-- [ ] Sign in with Google (if configured); redirect and session created.
+- [ ] Sign in with Google (if configured); redirect to dashboard (or `return_to` if set).
+- [ ] Admin: click "Admin sign in" on sign-in page; email/password form appears; sign in with correct admin credentials; redirect to dashboard.
+- [ ] Admin: sign in with wrong password; error shown, stay on sign-in.
 
 ### Sign out
 

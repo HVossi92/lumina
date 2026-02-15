@@ -18,7 +18,7 @@ Lumina is a multi-organization photo sharing app. Create organizations, add albu
 
 ## What is Lumina?
 
-Lumina lets teams and families share photos in a simple, private way. You create **organizations** (e.g. “Family” or “Soccer Club”), add **albums** inside them, and **upload photos**. You can then **share** an album with anyone via a link—optionally with an expiry date and/or password—so they can view the photos without signing in. Regular users join organizations via invite links or codes from an administrator. The app supports email/password sign-up and optional **Sign in with Google**.
+Lumina lets teams and families share photos in a simple, private way. You create **organizations** (e.g. “Family” or “Soccer Club”), add **albums** inside them, and **upload photos**. You can then **share** an album with anyone via a link—optionally with an expiry date and/or password—so they can view the photos without signing in. Regular users join organizations via invite links or codes from an administrator. **Sign-up is invite-only**: you need an invite link to create an account, and only **Sign in with Google** (OAuth) is available for new users. Administrators sign in with email and password (use the **Admin sign in** link on the sign-in page).
 
 ---
 
@@ -38,8 +38,8 @@ For **Docker** deployment, only Docker and Docker Compose are required on the ho
 ### Getting started
 
 1. Open the app in your browser (e.g. [http://localhost:4000](http://localhost:4000) in development).
-2. **Sign up**: Click **Register** and create an account with email and password, or use **Sign in with Google** (see [Google OAuth setup](#google-oauth) below).
-3. **Sign in**: Use **Sign in** with your email and password or **Sign in with Google**.
+2. **Sign up** (invite-only): Get an invite link from an administrator (e.g. `/join/TOKEN`). Open that link, then use **Sign in with Google** to create your account (see [Google OAuth setup](#google-oauth) below). Without an invite, new sign-ups are not allowed.
+3. **Sign in**: Use **Sign in with Google**, or for administrators use **Admin sign in** (small link on the sign-in page) to sign in with email and password.
 
 ### Using the app
 
