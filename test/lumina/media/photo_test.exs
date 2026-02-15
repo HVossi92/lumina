@@ -124,4 +124,57 @@ defmodule Lumina.Media.PhotoTest do
       assert {:error, _} = Ash.get(Photo, photo.id, actor: user, tenant: org.id)
     end
   end
+
+  describe "storage limit" do
+    setup do
+      user = user_fixture()
+      org = org_fixture(user)
+      album = album_fixture(org, user)
+      %{user: user, org: org, album: album}
+    end
+
+    @limit_bytes 4 * 1024 * 1024 * 1024
+
+    test "create rejects when limit would be exceeded", %{user: user, org: org, album: album} do
+      # One photo just under 4GB
+      _existing = photo_fixture(album, user, %{file_size: @limit_bytes - 100})
+      # One more that would push over
+      {:error, error} =
+        Photo
+        |> Ash.Changeset.for_create(:create, %{
+          filename: "over.jpg",
+          original_path: "priv/static/uploads/originals/over.jpg",
+          thumbnail_path: "priv/static/uploads/thumbnails/over.avif",
+          file_size: 200,
+          content_type: "image/jpeg",
+          album_id: album.id,
+          uploaded_by_id: user.id
+        })
+        |> Ash.create(actor: user, tenant: org.id)
+
+      assert %Ash.Error.Invalid{} = error
+      message = Ash.Error.error_descriptions(error)
+      assert message =~ "4 GB"
+      assert message =~ "storage limit"
+    end
+
+    test "create allows when at or under limit", %{user: user, org: org, album: album} do
+      _existing = photo_fixture(album, user, %{file_size: @limit_bytes - 1})
+
+      {:ok, photo} =
+        Photo
+        |> Ash.Changeset.for_create(:create, %{
+          filename: "one-byte.jpg",
+          original_path: "priv/static/uploads/originals/one.jpg",
+          thumbnail_path: "priv/static/uploads/thumbnails/one.avif",
+          file_size: 1,
+          content_type: "image/jpeg",
+          album_id: album.id,
+          uploaded_by_id: user.id
+        })
+        |> Ash.create(actor: user, tenant: org.id)
+
+      assert photo.file_size == 1
+    end
+  end
 end

@@ -1,9 +1,16 @@
 defmodule Lumina.Media.Org do
+  @moduledoc """
+  Organization resource. Each org has a 4GB storage limit for photo uploads.
+  """
   use Ash.Resource,
     otp_app: :lumina,
     domain: Lumina.Media,
     data_layer: AshSqlite.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
+
+  @storage_limit_bytes 4 * 1024 * 1024 * 1024
+
+  def storage_limit_bytes, do: @storage_limit_bytes
 
   sqlite do
     table "orgs"

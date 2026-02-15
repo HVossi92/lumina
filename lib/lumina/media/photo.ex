@@ -38,6 +38,8 @@ defmodule Lumina.Media.Photo do
         :uploaded_by_id
       ]
 
+      change Lumina.Media.Photo.Changes.ValidateStorageLimit
+
       change fn changeset, _context ->
         case Ash.Changeset.get_attribute(changeset, :album_id) do
           nil ->

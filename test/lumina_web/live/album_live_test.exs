@@ -146,6 +146,30 @@ defmodule LuminaWeb.AlbumLiveTest do
       assert render(view) =~ "c"
     end
 
+    test "storage bar updates after photo added and after photo deleted", %{
+      conn: conn,
+      user: user,
+      org: org,
+      album: album
+    } do
+      conn = log_in_user(conn, user)
+      {:ok, view_before, _} = live(conn, ~p"/orgs/#{org.slug}/albums/#{album.id}")
+      assert has_element?(view_before, "#org-storage-bar")
+      assert view_before |> element("#org-storage-bar") |> render() =~ "0 B"
+
+      _photo = photo_fixture(album, user, %{file_size: 1024})
+      {:ok, view_after_add, _} = live(conn, ~p"/orgs/#{org.slug}/albums/#{album.id}")
+      assert view_after_add |> element("#org-storage-bar") |> render() =~ "1.0 KB"
+
+      # Delete the photo (we need the photo id)
+      photos = Lumina.Media.Photo.for_album!(album.id, actor: user, tenant: org.id)
+      photo = hd(photos)
+      Ash.destroy(photo, actor: user, tenant: org.id)
+
+      {:ok, view_after_delete, _} = live(conn, ~p"/orgs/#{org.slug}/albums/#{album.id}")
+      assert view_after_delete |> element("#org-storage-bar") |> render() =~ "0 B"
+    end
+
     test "lightbox next respects search", %{conn: conn, user: user, org: org, album: album} do
       photo_fixture(album, user, %{filename: "first.jpg"})
       photo_fixture(album, user, %{filename: "second-match.jpg"})

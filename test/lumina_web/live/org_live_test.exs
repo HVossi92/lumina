@@ -61,6 +61,41 @@ defmodule LuminaWeb.OrgLiveTest do
 
       assert html =~ "No albums"
     end
+
+    test "displays storage usage bar with correct usage and limit", %{
+      conn: conn,
+      user: user,
+      org: org
+    } do
+      album = album_fixture(org, user)
+      _photo = photo_fixture(album, user, %{file_size: 2_000_000})
+
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}")
+
+      assert has_element?(view, "#org-storage-bar")
+      bar_html = view |> element("#org-storage-bar") |> render()
+      assert bar_html =~ "Storage:"
+      assert bar_html =~ "4.0 GB"
+      assert bar_html =~ "1.91 MB"
+    end
+
+    test "displays storage bar with 0 usage when org has no photos", %{
+      conn: conn,
+      user: user,
+      org: org
+    } do
+      _album = album_fixture(org, user)
+
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}")
+
+      assert has_element?(view, "#org-storage-bar")
+      bar_html = view |> element("#org-storage-bar") |> render()
+      assert bar_html =~ "Storage:"
+      assert bar_html =~ "4.0 GB"
+      assert bar_html =~ "0 B"
+    end
   end
 
   defp log_in_user(conn, user) do

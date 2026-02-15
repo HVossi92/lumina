@@ -39,6 +39,10 @@ defmodule LuminaWeb.Layouts do
     default: [],
     doc: "list of %{org: org, albums: [album]} for sidebar album links"
 
+  attr :org_storage_used_bytes, :integer, default: nil
+  attr :org_storage_limit_bytes, :integer, default: nil
+  attr :current_org, :any, default: nil
+
   attr :inner_content, :any, default: nil, doc: "inner content when used as LiveView layout"
 
   slot :inner_block, required: false
@@ -54,17 +58,29 @@ defmodule LuminaWeb.Layouts do
 
       <main class="flex-1 min-w-0 lg:ml-0">
         <header class="sticky top-0 z-40 bg-base-100/90 backdrop-blur border-b border-base-300 px-4 sm:px-6 py-3 mt-[52px] lg:mt-0">
-          <div class="flex items-center justify-end gap-2">
-            <.theme_toggle />
-            <%= if @current_user do %>
-              <a
-                href={~p"/sign-out"}
-                class="btn btn-ghost btn-sm gap-2 rounded-md"
-                id="sign-out-button"
-              >
-                <.icon name="hero-arrow-right-on-rectangle" class="size-4" /> Sign out
-              </a>
-            <% end %>
+          <div class="max-w-6xl mx-auto flex items-center justify-between gap-4 w-full">
+            <div class="min-w-0 flex-1 flex items-center">
+              <%= if @org_storage_used_bytes != nil and @org_storage_limit_bytes != nil do %>
+                <.org_storage_bar
+                  used_bytes={@org_storage_used_bytes}
+                  limit_bytes={@org_storage_limit_bytes}
+                  org_name={if @current_org, do: @current_org.name, else: nil}
+                  compact
+                />
+              <% end %>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <.theme_toggle />
+              <%= if @current_user do %>
+                <a
+                  href={~p"/sign-out"}
+                  class="btn btn-ghost btn-sm gap-2 rounded-md"
+                  id="sign-out-button"
+                >
+                  <.icon name="hero-arrow-right-on-rectangle" class="size-4" /> Sign out
+                </a>
+              <% end %>
+            </div>
           </div>
         </header>
 
@@ -270,6 +286,81 @@ defmodule LuminaWeb.Layouts do
       true -> String.starts_with?(current_path, to)
     end
   end
+
+  attr :used_bytes, :integer, required: true
+  attr :limit_bytes, :integer, required: true
+  attr :org_name, :string, default: nil
+  attr :compact, :boolean, default: false
+
+  defp org_storage_bar(assigns) do
+    used = assigns.used_bytes
+    limit = assigns.limit_bytes
+    pct = if limit > 0, do: min(100, round(used / limit * 100)), else: 0
+    assigns = assign(assigns, :percent_used, pct)
+    assigns = assign(assigns, :used_label, format_bytes(used))
+    assigns = assign(assigns, :limit_label, format_bytes(limit))
+    assigns = assign(assigns, :near_or_over?, pct >= 80)
+
+    ~H"""
+    <div
+      id="org-storage-bar"
+      class={[
+        "flex items-center gap-2 text-sm min-w-0",
+        @compact && "flex-1 max-w-md",
+        !@compact && "px-4 sm:px-6 py-2 bg-base-200/60 border-b border-base-300"
+      ]}
+      aria-label="Organization storage usage"
+    >
+      <div class={["flex items-center gap-2 min-w-0", @compact && "flex-1"]}>
+        <.icon name="hero-circle-stack" class="size-4 text-base-content/50 shrink-0" />
+        <span class="text-base-content/70 truncate">
+          <%= if @org_name do %>
+            <span class="font-medium">{@org_name}</span> —
+          <% end %>
+          Storage: {@used_label} / {@limit_label}
+        </span>
+        <div class={[
+          "flex shrink-0",
+          @compact && "min-w-[80px] w-24",
+          !@compact && "flex-1 min-w-[120px] max-w-xs"
+        ]}>
+          <progress
+            class={[
+              "progress h-2 w-full",
+              @near_or_over? && "progress-error",
+              !@near_or_over? && "progress-accent"
+            ]}
+            value={@percent_used}
+            max="100"
+            aria-valuenow={@percent_used}
+            aria-valuemin="0"
+            aria-valuemax="100"
+          >
+            {@percent_used}%
+          </progress>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  defp format_bytes(bytes) when is_integer(bytes) and bytes >= 1_073_741_824 do
+    gb = bytes / 1_073_741_824
+    "#{Float.round(gb, 2)} GB"
+  end
+
+  defp format_bytes(bytes) when is_integer(bytes) and bytes >= 1_048_576 do
+    mb = bytes / 1_048_576
+    "#{Float.round(mb, 2)} MB"
+  end
+
+  defp format_bytes(bytes) when is_integer(bytes) and bytes >= 1024 do
+    kb = bytes / 1024
+    "#{Float.round(kb, 2)} KB"
+  end
+
+  defp format_bytes(bytes) when is_integer(bytes), do: "#{bytes} B"
+  defp format_bytes(_), do: "0 B"
 
   defp user_initials(user) do
     email = user.email || ""

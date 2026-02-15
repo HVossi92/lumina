@@ -109,4 +109,36 @@ defmodule Lumina.Media.OrgTest do
       assert found_org.id == org.id
     end
   end
+
+  describe "storage_used_bytes" do
+    setup do
+      user = user_fixture()
+      org = org_fixture(user)
+      album = album_fixture(org, user)
+      %{user: user, org: org, album: album}
+    end
+
+    test "is 0 with no photos", %{org: org} do
+      assert Lumina.Media.Storage.used_bytes(org.id) == 0
+    end
+
+    test "sums one photo file_size", %{user: user, org: org, album: album} do
+      _photo = photo_fixture(album, user, %{file_size: 1000})
+      assert Lumina.Media.Storage.used_bytes(org.id) == 1000
+    end
+
+    test "sums multiple photos", %{user: user, org: org, album: album} do
+      _p1 = photo_fixture(album, user, %{file_size: 500})
+      _p2 = photo_fixture(album, user, %{file_size: 1500})
+      assert Lumina.Media.Storage.used_bytes(org.id) == 2000
+    end
+
+    test "decreases after photo is deleted", %{user: user, org: org, album: album} do
+      photo = photo_fixture(album, user, %{file_size: 3000})
+      assert Lumina.Media.Storage.used_bytes(org.id) == 3000
+
+      Ash.destroy(photo, actor: user, tenant: org.id)
+      assert Lumina.Media.Storage.used_bytes(org.id) == 0
+    end
+  end
 end

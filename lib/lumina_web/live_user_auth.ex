@@ -52,6 +52,37 @@ defmodule LuminaWeb.LiveUserAuth do
     {:cont, assign(socket, :sidebar_orgs_with_albums, sidebar_orgs_with_albums)}
   end
 
+  def on_mount(:assign_org_storage, params, _session, socket) do
+    socket =
+      if slug = params["org_slug"] do
+        user = socket.assigns.current_user
+
+        case Org.by_slug(slug, actor: user) do
+          {:ok, org} ->
+            used = Lumina.Media.Storage.used_bytes(org.id)
+            limit = Org.storage_limit_bytes()
+
+            socket
+            |> assign(:org_storage_used_bytes, used)
+            |> assign(:org_storage_limit_bytes, limit)
+            |> assign(:current_org, org)
+
+          {:error, _} ->
+            socket
+            |> assign(:org_storage_used_bytes, nil)
+            |> assign(:org_storage_limit_bytes, nil)
+            |> assign(:current_org, nil)
+        end
+      else
+        socket
+        |> assign(:org_storage_used_bytes, nil)
+        |> assign(:org_storage_limit_bytes, nil)
+        |> assign(:current_org, nil)
+      end
+
+    {:cont, socket}
+  end
+
   def on_mount(:live_no_user, _params, _session, socket) do
     if socket.assigns[:current_user] do
       {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}

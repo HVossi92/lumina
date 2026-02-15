@@ -1,8 +1,10 @@
 defmodule LuminaWeb.PhotoLive.Upload do
   use LuminaWeb, :live_view
 
-  alias Lumina.Media.{Photo, Thumbnail}
+  alias Lumina.Media.{Org, Photo, Thumbnail}
   alias Lumina.Jobs.ProcessUpload
+
+  @storage_limit_message "Organization storage limit (4 GB) would be exceeded"
 
   @impl true
   def mount(%{"org_slug" => slug, "album_id" => album_id}, _session, socket) do
@@ -38,7 +40,26 @@ defmodule LuminaWeb.PhotoLive.Upload do
   def handle_event("save", _params, socket) do
     user = socket.assigns.current_user
     album = socket.assigns.album
+    org = socket.assigns.org
 
+    current_used = Lumina.Media.Storage.used_bytes(org.id)
+    limit = Org.storage_limit_bytes()
+
+    batch_total =
+      socket.assigns.uploads.photos.entries
+      |> Enum.map(& &1.client_size)
+      |> Enum.sum()
+
+    if current_used + batch_total > limit do
+      {:noreply,
+       socket
+       |> put_flash(:error, @storage_limit_message)}
+    else
+      save_uploaded_entries(socket, user, album, org)
+    end
+  end
+
+  defp save_uploaded_entries(socket, user, album, org) do
     uploaded_files =
       consume_uploaded_entries(socket, :photos, fn %{path: path}, entry ->
         photo_id = Ash.UUID.generate()
@@ -66,7 +87,7 @@ defmodule LuminaWeb.PhotoLive.Upload do
             album_id: album.id,
             uploaded_by_id: user.id
           })
-          |> Ash.create(actor: user, tenant: socket.assigns.org.id)
+          |> Ash.create(actor: user, tenant: org.id)
 
         # Queue thumbnail generation
         %{photo_id: photo.id}
@@ -79,7 +100,7 @@ defmodule LuminaWeb.PhotoLive.Upload do
     {:noreply,
      socket
      |> put_flash(:info, "#{length(uploaded_files)} photos uploaded successfully!")
-     |> push_navigate(to: ~p"/orgs/#{socket.assigns.org.slug}/albums/#{album.id}")}
+     |> push_navigate(to: ~p"/orgs/#{org.slug}/albums/#{album.id}")}
   end
 
   @impl true

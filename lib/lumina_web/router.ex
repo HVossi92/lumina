@@ -38,7 +38,8 @@ defmodule LuminaWeb.Router do
       on_mount: [
         {LuminaWeb.LiveUserAuth, :live_user_required},
         {LuminaWeb.LiveUserAuth, :assign_current_path},
-        {LuminaWeb.LiveUserAuth, :assign_sidebar_albums}
+        {LuminaWeb.LiveUserAuth, :assign_sidebar_albums},
+        {LuminaWeb.LiveUserAuth, :assign_org_storage}
       ] do
       live "/", DashboardLive
       live "/join", JoinLive
