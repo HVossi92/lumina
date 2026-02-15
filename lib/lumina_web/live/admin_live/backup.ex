@@ -6,7 +6,7 @@ defmodule LuminaWeb.AdminLive.Backup do
     user = socket.assigns.current_user
 
     if user.role != :admin do
-      {:halt,
+      {:ok,
        socket
        |> put_flash(:error, "Only administrators can access this page")
        |> Phoenix.LiveView.redirect(to: ~p"/")}
@@ -52,7 +52,7 @@ defmodule LuminaWeb.AdminLive.Backup do
   @impl true
   def render(assigns) do
     ~H"""
-    <section>
+    <section id="admin-backup-section" phx-hook=".BackupDownload">
       <h1 class="text-3xl font-serif font-bold text-base-content mb-6 text-balance">
         System Backup
       </h1>
@@ -76,11 +76,32 @@ defmodule LuminaWeb.AdminLive.Backup do
 
       <button
         phx-click="download_backup"
-        class="btn btn-accent w-full rounded-md"
+        id="admin-backup-download-btn"
+        class="btn btn-accent w-full rounded-md group"
       >
-        Download System Backup
+        <span class="group-[.phx-loading]:hidden">
+          Download System Backup
+        </span>
+        <span class="hidden group-[.phx-loading]:inline-flex items-center justify-center gap-2">
+          <.icon name="hero-arrow-path" class="size-5 animate-spin shrink-0" /> Creating backup...
+        </span>
       </button>
     </section>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".BackupDownload">
+      export default {
+        mounted() {
+          this.handleEvent("trigger_download", ({ url, filename }) => {
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename || "";
+            a.style.display = "none";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          });
+        }
+      }
+    </script>
     """
   end
 end
