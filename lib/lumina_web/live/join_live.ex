@@ -17,7 +17,7 @@ defmodule LuminaWeb.JoinLive do
       is_nil(user) ->
         return_to = if token, do: "/join/#{token}", else: "/join"
 
-        {:halt,
+        {:ok,
          socket
          |> put_flash(:info, "Sign in to join an organization")
          |> Phoenix.LiveView.redirect(to: "/sign-in?return_to=#{URI.encode_www_form(return_to)}")}

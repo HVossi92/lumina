@@ -239,11 +239,6 @@ defmodule LuminaWeb.AlbumLive.Show do
     org = socket.assigns.org
     photo = Ash.get!(Lumina.Media.Photo, photo_id, actor: user, tenant: org.id)
 
-    # Delete files
-    File.rm(photo.original_path)
-    File.rm(photo.thumbnail_path)
-
-    # Delete record
     Ash.destroy!(photo, actor: user, tenant: org.id)
 
     # Reload photos and sort; close lightbox when photos change

@@ -23,6 +23,13 @@ defmodule LuminaWeb.AuthOverrides do
     set :text_class, "font-serif font-bold text-base-content"
   end
 
+  # Admin sign-in: password only, no register or reset toggle
+  override Components.Password do
+    set :register_toggle_text, nil
+    set :reset_toggle_text, nil
+    set :show_first, :sign_in
+  end
+
   # Primary actions use accent (golden) to match the rest of the app
   override Components.Password.Input do
     set :submit_class, "btn btn-accent btn-block mt-4 mb-4 rounded-md"

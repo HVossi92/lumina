@@ -12,7 +12,7 @@ defmodule LuminaWeb.OrgLive.Show do
     member? = Enum.any?(org.memberships || [], fn m -> m.user_id == user.id end)
 
     if user.role == :admin and !member? do
-      {:halt,
+      {:ok,
        socket
        |> put_flash(:error, "You can manage organizations but cannot access their content")
        |> Phoenix.LiveView.redirect(to: ~p"/admin/orgs")}

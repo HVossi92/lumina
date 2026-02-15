@@ -90,4 +90,18 @@ defmodule LuminaWeb.AuthControllerTest do
       assert redirected_to(conn) == ~p"/"
     end
   end
+
+  describe "register_with_password – forbidden" do
+    test "password registration is forbidden (policy blocks public signup)" do
+      changeset =
+        User
+        |> Ash.Changeset.for_create(:register_with_password, %{
+          email: "newuser@example.com",
+          password: "Password123!",
+          password_confirmation: "Password123!"
+        })
+
+      assert {:error, %Ash.Error.Forbidden{}} = Ash.create(changeset)
+    end
+  end
 end

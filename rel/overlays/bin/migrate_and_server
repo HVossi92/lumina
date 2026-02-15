@@ -2,4 +2,4 @@
 set -eu
 
 cd -P -- "$(dirname -- "$0")"
-./lumina eval "Lumina.Release.prepare()" && exec ./server
+./lumina eval "Lumina.Release.prepare(); Lumina.Release.seeds()" && exec ./server

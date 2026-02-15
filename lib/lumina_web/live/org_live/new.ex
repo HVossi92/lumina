@@ -6,7 +6,7 @@ defmodule LuminaWeb.OrgLive.New do
     user = socket.assigns.current_user
 
     if user.role != :admin do
-      {:halt,
+      {:ok,
        socket
        |> put_flash(:error, "Only administrators can create organizations")
        |> Phoenix.LiveView.redirect(to: ~p"/")}

@@ -18,7 +18,23 @@ defmodule Lumina.Media.Photo do
   end
 
   actions do
-    defaults [:read, :update, :destroy]
+    defaults [:read, :update]
+
+    destroy :destroy do
+      primary? true
+      require_atomic? false
+
+      change before_action(fn changeset, _context ->
+               photo = changeset.data
+
+               if photo do
+                 _ = File.rm(photo.original_path)
+                 _ = File.rm(photo.thumbnail_path)
+               end
+
+               changeset
+             end)
+    end
 
     update :rename do
       accept [:filename]

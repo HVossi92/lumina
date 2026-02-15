@@ -4,6 +4,8 @@ defmodule Lumina.Accounts.OrgInvite do
   Created by admins or org owners; redeemed by authenticated users.
   """
 
+  require Ash.Query
+
   use Ash.Resource,
     otp_app: :lumina,
     domain: Lumina.Accounts,
@@ -57,7 +59,7 @@ defmodule Lumina.Accounts.OrgInvite do
 
       run fn input, _opts ->
         token = input.arguments.token
-        actor = input.context.actor
+        actor = get_in(input.context, [:private, :actor])
 
         if is_nil(actor) do
           {:error, Ash.Error.Changeset.forbidden("You must be signed in to join an organization")}

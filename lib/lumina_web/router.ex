@@ -53,6 +53,7 @@ defmodule LuminaWeb.Router do
       live "/orgs/:org_slug/albums/:album_id/share", AlbumLive.Share
       live "/admin/backup", AdminLive.Backup
       live "/admin/orgs", AdminLive.Orgs
+      live "/admin/users", AdminLive.Users
     end
   end
 
@@ -68,16 +69,12 @@ defmodule LuminaWeb.Router do
     auth_routes AuthController, Lumina.Accounts.User, path: "/auth"
     sign_out_route AuthController
 
-    # Remove these if you'd like to use your own authentication views
-    sign_in_route register_path: nil,
-                  reset_path: "/reset",
-                  auth_routes_prefix: "/auth",
-                  layout: {LuminaWeb.Layouts, :auth},
-                  on_mount: [{LuminaWeb.LiveUserAuth, :live_no_user}],
-                  overrides: [
-                    Elixir.AshAuthentication.Phoenix.Overrides.DaisyUI,
-                    LuminaWeb.AuthOverrides
-                  ]
+    live_session :auth_pages,
+      layout: {LuminaWeb.Layouts, :auth},
+      on_mount: [{LuminaWeb.LiveUserAuth, :live_no_user}] do
+      live "/sign-in", SignInLive
+      live "/admin/sign-in", AdminSignInLive
+    end
 
     # Remove this if you do not want to use the reset password feature
     reset_route auth_routes_prefix: "/auth",
@@ -90,12 +87,6 @@ defmodule LuminaWeb.Router do
     confirm_route Lumina.Accounts.User, :confirm_new_user,
       auth_routes_prefix: "/auth",
       overrides: [Elixir.AshAuthentication.Phoenix.Overrides.DaisyUI, LuminaWeb.AuthOverrides]
-
-    # Remove this if you do not use the magic link strategy.
-    magic_sign_in_route(Lumina.Accounts.User, :magic_link,
-      auth_routes_prefix: "/auth",
-      overrides: [Elixir.AshAuthentication.Phoenix.Overrides.DaisyUI, LuminaWeb.AuthOverrides]
-    )
   end
 
   # Other scopes may use custom stacks.

@@ -29,6 +29,7 @@ defmodule Lumina.Accounts.OrgMembership do
 
   policies do
     policy action_type(:read) do
+      authorize_if Ash.Policy.Check.Builtins.actor_attribute_equals(:role, :admin)
       authorize_if expr(user_id == ^actor(:id))
     end
 
@@ -42,6 +43,7 @@ defmodule Lumina.Accounts.OrgMembership do
     end
 
     policy action_type([:update, :destroy]) do
+      authorize_if Ash.Policy.Check.Builtins.actor_attribute_equals(:role, :admin)
       authorize_if expr(exists(org.memberships, user_id == ^actor(:id) and role == :owner))
     end
   end

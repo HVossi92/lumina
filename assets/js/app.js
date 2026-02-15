@@ -36,21 +36,6 @@ const liveSocket = new LiveSocket("/live", Socket, {
     ...colocatedHooks,
     ...MishkaComponents,
     LightboxKeys,
-    AdminSignInToggle: {
-      mounted() {
-        const btn = this.el;
-        const section = document.querySelector('[id*="with-password"]');
-        if (section) section.classList.add("hidden");
-        btn.addEventListener("click", () => {
-          if (section) {
-            section.classList.toggle("hidden");
-            btn.textContent = section.classList.contains("hidden")
-              ? "Admin sign in"
-              : "Hide admin sign in";
-          }
-        });
-      },
-    },
   },
 });
 // Show progress bar on live navigation and form submits

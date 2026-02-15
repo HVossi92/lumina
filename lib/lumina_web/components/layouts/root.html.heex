@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-initial-path={if assigns[:conn], do: assigns.conn.request_path, else: ""}>
   <head>
     {Application.get_env(:live_debugger, :live_debugger_tags)}
 
@@ -31,7 +31,14 @@
           }
         };
         if (!document.documentElement.hasAttribute("data-theme")) {
-          setTheme(localStorage.getItem("phx:theme") || "system");
+          const stored = localStorage.getItem("phx:theme");
+          const path = document.documentElement.getAttribute("data-initial-path") || "";
+          const isAuthPath = path === "/sign-in" || path === "/admin/sign-in" || path.startsWith("/auth");
+          if (isAuthPath && !stored) {
+            document.documentElement.setAttribute("data-theme", "light");
+          } else {
+            setTheme(stored || "system");
+          }
         }
         window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
         

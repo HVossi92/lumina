@@ -24,7 +24,53 @@ defmodule Lumina.Media.Org do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
+
+    destroy :destroy do
+      primary? true
+      require_atomic? false
+
+      # Manually destroy multitenant resources (photos, albums, share_links)
+      # with the org's id as tenant, since cascade_destroy doesn't handle multitenancy
+      change before_action(fn changeset, context ->
+               org = changeset.data
+               actor = context.actor
+
+               # Delete photos (with tenant, also deletes files via Photo's before_action)
+               photos =
+                 Ash.read!(Lumina.Media.Photo, actor: actor, tenant: org.id, authorize?: false)
+
+               Enum.each(photos, fn photo ->
+                 Ash.destroy!(photo, actor: actor, tenant: org.id, authorize?: false)
+               end)
+
+               # Delete share_links (global? true, but still has org_id tenant)
+               share_links =
+                 Ash.read!(Lumina.Media.ShareLink,
+                   actor: actor,
+                   tenant: org.id,
+                   authorize?: false
+                 )
+
+               Enum.each(share_links, fn share_link ->
+                 Ash.destroy!(share_link, actor: actor, tenant: org.id, authorize?: false)
+               end)
+
+               # Delete albums (with tenant)
+               albums =
+                 Ash.read!(Lumina.Media.Album, actor: actor, tenant: org.id, authorize?: false)
+
+               Enum.each(albums, fn album ->
+                 Ash.destroy!(album, actor: actor, tenant: org.id, authorize?: false)
+               end)
+
+               changeset
+             end)
+
+      # Cascade destroy non-multitenant resources
+      change Ash.Resource.Change.Builtins.cascade_destroy(:memberships, after_action?: false)
+      change Ash.Resource.Change.Builtins.cascade_destroy(:invites, after_action?: false)
+    end
 
     update :update do
       accept [:name, :slug]
@@ -34,6 +80,7 @@ defmodule Lumina.Media.Org do
       accept [:name, :slug]
 
       change Lumina.Media.Org.GenerateSlugFromName
+      change Lumina.Media.Org.AddCreatorAsOwner
     end
 
     read :by_slug do
@@ -98,6 +145,11 @@ defmodule Lumina.Media.Org do
     end
 
     has_many :share_links, Lumina.Media.ShareLink do
+      destination_attribute :org_id
+      public? true
+    end
+
+    has_many :invites, Lumina.Accounts.OrgInvite do
       destination_attribute :org_id
       public? true
     end

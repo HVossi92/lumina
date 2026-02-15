@@ -17,7 +17,14 @@ defmodule LuminaWeb.Layouts do
   """
   def auth(assigns) do
     ~H"""
-    <div class="min-h-screen flex flex-col items-center justify-center bg-base-100 text-base-content px-4 py-8">
+    <div class="relative min-h-screen flex flex-col items-center justify-center bg-base-100 text-base-content px-4 py-8">
+      <.link
+        navigate={~p"/admin/sign-in"}
+        class="absolute top-4 right-4 text-sm text-base-content/60 hover:text-base-content transition-colors"
+        id="admin-sign-in-link"
+      >
+        Admin sign in
+      </.link>
       <.link navigate={~p"/"} class="flex items-center gap-2.5 mb-8">
         <.icon name="hero-photo" class="size-5 text-accent" />
         <span class="font-serif font-bold text-lg text-base-content tracking-tight">Lumina</span>
@@ -25,14 +32,6 @@ defmodule LuminaWeb.Layouts do
       <div class="w-full max-w-sm">
         {@inner_content}
       </div>
-      <button
-        type="button"
-        id="toggle-admin-sign-in"
-        class="mt-6 text-sm text-base-content/60 hover:text-base-content transition-colors"
-        phx-hook="AdminSignInToggle"
-      >
-        Admin sign in
-      </button>
     </div>
     <.flash_group flash={assigns[:flash] || %{}} />
     """
@@ -248,6 +247,14 @@ defmodule LuminaWeb.Layouts do
                   label="Organizations"
                   current_path={@current_path}
                   icon="hero-building-office-2"
+                />
+              </li>
+              <li>
+                <.nav_link
+                  to={~p"/admin/users"}
+                  label="Users"
+                  current_path={@current_path}
+                  icon="hero-users"
                 />
               </li>
               <li>

@@ -45,7 +45,30 @@ defmodule Lumina.Accounts.User do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
+
+    destroy :destroy do
+      primary? true
+      require_atomic? false
+      change Ash.Resource.Change.Builtins.cascade_destroy(:org_memberships, after_action?: false)
+
+      change before_action(fn changeset, _context ->
+               # Nullify uploaded_by_id and created_by_id before destroying user
+               user_id = changeset.data.id
+
+               Lumina.Repo.query!(
+                 "UPDATE photos SET uploaded_by_id = NULL WHERE uploaded_by_id = ?",
+                 [user_id]
+               )
+
+               Lumina.Repo.query!(
+                 "UPDATE share_links SET created_by_id = NULL WHERE created_by_id = ?",
+                 [user_id]
+               )
+
+               changeset
+             end)
+    end
 
     update :update do
       accept [:role]
@@ -75,13 +98,23 @@ defmodule Lumina.Accounts.User do
   end
 
   policies do
+    # Must come BEFORE bypass so it is evaluated first.
+    policy action(:register_with_password) do
+      forbid_if always()
+    end
+
     bypass AshAuthentication.Checks.AshAuthenticationInteraction do
       authorize_if always()
     end
 
-    # Block public registration: only allow when actor is present (e.g. seeds use authorize?: false).
-    policy action(:register_with_password) do
-      forbid_if always()
+    policy action_type(:read) do
+      forbid_unless Ash.Policy.Check.Builtins.actor_attribute_equals(:role, :admin)
+      authorize_if Ash.Policy.Check.Builtins.actor_attribute_equals(:role, :admin)
+    end
+
+    policy action_type(:destroy) do
+      forbid_if expr(id == ^actor(:id))
+      authorize_if Ash.Policy.Check.Builtins.actor_attribute_equals(:role, :admin)
     end
   end
 

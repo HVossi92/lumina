@@ -6,7 +6,7 @@ defmodule Lumina.Media.OrgTest do
   alias Lumina.Media.Org
 
   describe "orgs" do
-    test "creates org (admin only; members added via invite)" do
+    test "creates org (admin only; creator is added as owner; more members via invite)" do
       admin = admin_fixture()
       user = user_fixture()
 
@@ -15,16 +15,22 @@ defmodule Lumina.Media.OrgTest do
       assert org.name == "My Org"
       assert org.slug == "my-org"
 
-      # Org has no members initially; add owner via membership
+      # Creator (admin) is added as owner by AddCreatorAsOwner change
+      org = Ash.load!(org, :memberships, authorize?: false)
+      assert length(org.memberships) == 1
+      assert hd(org.memberships).user_id == admin.id
+      assert hd(org.memberships).role == :owner
+
+      # Add another owner via membership (e.g. invite flow)
       {:ok, _} =
         Lumina.Accounts.OrgMembership
         |> Ash.Changeset.for_create(:create, %{user_id: user.id, org_id: org.id, role: :owner})
         |> Ash.create(authorize?: false)
 
       org = Ash.load!(org, :memberships, authorize?: false)
-      assert length(org.memberships) == 1
-      assert hd(org.memberships).user_id == user.id
-      assert hd(org.memberships).role == :owner
+      assert length(org.memberships) == 2
+      owner_user_ids = Enum.map(org.memberships, & &1.user_id) |> Enum.sort()
+      assert owner_user_ids == Enum.sort([admin.id, user.id])
     end
 
     test "generates slug from name when slug is blank" do

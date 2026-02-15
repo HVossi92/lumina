@@ -13,7 +13,7 @@ defmodule LuminaWeb.AdminLive.Orgs do
     user = socket.assigns.current_user
 
     if user.role != :admin do
-      {:halt,
+      {:ok,
        socket
        |> put_flash(:error, "Only administrators can access this page")
        |> Phoenix.LiveView.redirect(to: ~p"/")}
