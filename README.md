@@ -84,6 +84,20 @@ docker-compose up -d --build
 docker-compose exec lumina bin/lumina eval "Lumina.Release.migrate"
 ```
 
+### Seeds (first run only)
+
+After the first migration, create the admin user:
+
+```bash
+docker-compose exec lumina bin/lumina eval "Lumina.Release.seeds"
+```
+
+Set `LUMINA_ADMIN_EMAIL` and `LUMINA_ADMIN_PASSWORD` in `.env` (or in the Lumina service environment) before running seeds.
+
+### Volume permissions
+
+The Lumina container runs as a non-root user and needs write access to mounted volumes. Ensure `./data` and `./uploads` exist on the host and are writable by the container user (e.g. `chown 1000:1000 ./data ./uploads` if the container user has UID 1000).
+
 ### Where to store secrets (open source)
 
 **Never commit secrets to the repository.** The app reads secrets from **environment variables** only; config files only reference `System.get_env(...)` and never contain real values.

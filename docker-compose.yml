@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   lumina:
     build: .
@@ -18,6 +16,9 @@ services:
       - PHX_HOST=${PHX_HOST}
       - LUMINA_BACKUP_PASSWORD=${LUMINA_BACKUP_PASSWORD}
       - TOKEN_SIGNING_SECRET=${TOKEN_SIGNING_SECRET}
+      - LUMINA_ADMIN_EMAIL=${LUMINA_ADMIN_EMAIL:-admin@example.com}
+      - LUMINA_ADMIN_PASSWORD=${LUMINA_ADMIN_PASSWORD:-change-me-in-production}
+      - POOL_SIZE=${POOL_SIZE:-5}
       - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID:-}
       - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET:-}
       - GOOGLE_OAUTH_REDIRECT_URI=${GOOGLE_OAUTH_REDIRECT_URI:-}
@@ -31,10 +32,14 @@ services:
     ports:
       - '80:80'
       - '443:443'
+    environment:
+      - PHX_HOST=${PHX_HOST}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
+    depends_on:
+      - lumina
     networks:
       - web
 

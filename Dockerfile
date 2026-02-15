@@ -20,21 +20,26 @@ ENV MIX_ENV=prod
 # Install mix dependencies
 COPY mix.exs mix.lock ./
 RUN mix deps.get --only prod
+
+# Copy compile-time config only (better cache when runtime.exs changes)
+COPY config/config.exs config/prod.exs config/
 RUN mix deps.compile
 
+# Install Tailwind and esbuild executables
+RUN mix assets.setup
+
 # Copy source
-COPY config config
-COPY lib lib
 COPY priv priv
+COPY lib lib
+RUN mix compile
 
-# Copy assets
+# Copy assets and build
 COPY assets assets
-
-# Compile assets (esbuild + Tailwind via Mix)
 RUN mix assets.deploy
 
-# Compile release
-RUN mix compile
+# Runtime config and release overlays (don't require recompile)
+COPY config/runtime.exs config/
+COPY rel rel
 RUN mix release
 
 # Runtime stage

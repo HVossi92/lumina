@@ -56,6 +56,14 @@ docker-compose up -d --build
 docker-compose exec lumina bin/lumina eval "Lumina.Release.migrate"
 ```
 
+### 7. Run Seeds (first run only)
+
+Create the admin user (set `LUMINA_ADMIN_EMAIL` and `LUMINA_ADMIN_PASSWORD` in `.env` first):
+
+```bash
+docker-compose exec lumina bin/lumina eval "Lumina.Release.seeds"
+```
+
 ## Updating
 
 ```bash
@@ -127,6 +135,10 @@ Optional: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_
 - Uploads: `./uploads/originals/` and `./uploads/thumbnails/`
 
 Both directories are mounted as volumes and persist across container restarts.
+
+### Volume permissions
+
+The Lumina container runs as a non-root user. Ensure `./data` and `./uploads` exist on the host and are writable by the container user. If you see permission errors, create the directories and adjust ownership (e.g. `chown 1000:1000 ./data ./uploads` if the container user has UID 1000).
 
 ## Scaling Considerations
 
