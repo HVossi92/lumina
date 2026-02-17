@@ -18,7 +18,21 @@ defmodule LuminaWeb.AuthController do
       if memberships == [] do
         case validate_invite_return_to(return_to) do
           :ok ->
-            proceed_sign_in(conn, user, return_to, activity)
+            case redeem_invite_for_user(return_to, user) do
+              :ok ->
+                proceed_sign_in(conn, user, return_to, activity)
+
+              :invalid ->
+                Ash.destroy(user, authorize?: false)
+
+                conn
+                |> clear_session(:lumina)
+                |> put_flash(
+                  :error,
+                  "Your invitation is no longer valid. Ask your administrator for a new invite."
+                )
+                |> redirect(to: ~p"/sign-in")
+            end
 
           :invalid ->
             Ash.destroy(user, authorize?: false)
@@ -72,6 +86,22 @@ defmodule LuminaWeb.AuthController do
   end
 
   defp validate_invite_return_to(_), do: :invalid
+
+  defp redeem_invite_for_user(return_to, user) do
+    case extract_join_token(return_to) do
+      nil ->
+        :invalid
+
+      "" ->
+        :invalid
+
+      token ->
+        case OrgInvite.redeem(token, actor: user) do
+          {:ok, _} -> :ok
+          {:error, _} -> :invalid
+        end
+    end
+  end
 
   defp extract_join_token(path) do
     path = path |> String.trim() |> String.split("?") |> List.first()

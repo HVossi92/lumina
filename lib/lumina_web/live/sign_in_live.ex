@@ -1,7 +1,9 @@
 defmodule LuminaWeb.SignInLive do
   @moduledoc """
-  Invite-gated sign-in: shows invite code form until user has a valid invite,
-  then shows only "Sign in with Google".
+  Sign-in page for Google auth.
+
+  Existing users can always sign in.
+  New users still need a valid invite to complete signup.
   """
   use LuminaWeb, :live_view
 
@@ -58,48 +60,59 @@ defmodule LuminaWeb.SignInLive do
   def render(assigns) do
     ~H"""
     <div class="w-full max-w-sm mx-auto">
-      <%= if @has_valid_invite do %>
-        <div class="space-y-6">
+      <div class="space-y-6">
+        <div class="space-y-2">
           <p class="text-base-content/80 text-sm">
-            You have a valid invite. Sign in with Google to join the organization.
+            <%= if @has_valid_invite do %>
+              You have a valid invite. Sign in with Google to join the organization.
+            <% else %>
+              Existing users can sign in right away. New users need a valid invite to sign up.
+            <% end %>
           </p>
           <a
             href="/auth/user/google"
-            class="btn btn-accent btn-block rounded-md gap-2"
+            class={[
+              "btn btn-block rounded-md gap-2",
+              if(@has_valid_invite, do: "btn-success", else: "btn-accent")
+            ]}
             id="sign-in-with-google"
           >
             <.icon name="hero-envelope" class="size-5" /> Sign in with Google
           </a>
         </div>
-      <% else %>
-        <.form
-          for={@form}
-          id="invite-form"
-          phx-submit="validate_invite"
-          class="space-y-6"
-        >
-          <%= if @error do %>
-            <div class="alert alert-error rounded-md text-sm">
-              <.icon name="hero-exclamation-circle" class="size-5 shrink-0" />
-              <span>{@error}</span>
+
+        <%= unless @has_valid_invite do %>
+          <div class="divider text-xs text-base-content/50">Need an invite for a new account?</div>
+
+          <.form
+            for={@form}
+            id="invite-form"
+            phx-submit="validate_invite"
+            class="space-y-6"
+          >
+            <%= if @error do %>
+              <div class="alert alert-error rounded-md text-sm">
+                <.icon name="hero-exclamation-circle" class="size-5 shrink-0" />
+                <span>{@error}</span>
+              </div>
+            <% end %>
+            <div class="form-control">
+              <.input
+                field={@form[:token]}
+                type="text"
+                label="Invite code or paste the full invite link"
+                placeholder="Paste your invite code or link here"
+              />
+              <p class="mt-2 text-sm text-base-content/60">
+                Enter the code shared by your administrator, or paste the full invite URL.
+              </p>
             </div>
-          <% end %>
-          <div class="form-control">
-            <.input
-              field={@form[:token]}
-              type="text"
-              label="Invite code or paste the full invite link"
-              placeholder="Paste your invite code or link here"
-            />
-            <p class="mt-2 text-sm text-base-content/60">
-              Enter the code shared by your administrator, or paste the full invite URL. You need an invite to sign up.
-            </p>
-          </div>
-          <button type="submit" class="btn btn-accent btn-block rounded-md">
-            Continue
-          </button>
-        </.form>
-      <% end %>
+            <button type="submit" class="btn btn-outline btn-block rounded-md">
+              Continue with invite
+            </button>
+          </.form>
+        <% end %>
+      </div>
     </div>
     """
   end

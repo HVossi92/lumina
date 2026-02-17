@@ -62,6 +62,48 @@ defmodule LuminaWeb.AuthControllerTest do
                User |> Ash.Query.filter(id == ^user.id) |> Ash.read(authorize?: false)
 
       assert saved.id == user.id
+
+      assert {:ok, memberships} =
+               Lumina.Accounts.OrgMembership
+               |> Ash.Query.filter(user_id == ^user.id and org_id == ^org.id)
+               |> Ash.read(authorize?: false)
+
+      assert length(memberships) == 1
+    end
+
+    test "new user invited once can sign in later without invite and is not deleted", %{
+      conn: conn
+    } do
+      admin = admin_fixture()
+      org = org_fixture(admin)
+
+      {:ok, invite} =
+        Lumina.Accounts.OrgInvite
+        |> Ash.Changeset.for_create(:create, %{
+          org_id: org.id,
+          role: :member,
+          expires_at: DateTime.add(DateTime.utc_now(), 3600, :second)
+        })
+        |> Ash.create(authorize?: false)
+
+      user = user_fixture()
+
+      _first_conn =
+        conn
+        |> conn_with_flash(%{return_to: "/join/#{invite.token}"})
+        |> LuminaWeb.AuthController.success({:google, :callback}, user, nil)
+
+      second_conn =
+        build_conn()
+        |> conn_with_flash()
+        |> LuminaWeb.AuthController.success({:google, :callback}, user, nil)
+
+      assert redirected_to(second_conn) == ~p"/"
+
+      assert {:ok, [saved]} =
+               User |> Ash.Query.filter(id == ^user.id) |> Ash.read(authorize?: false)
+
+      assert saved.id == user.id
     end
 
     test "existing user (has org membership): proceeds regardless of return_to", %{conn: conn} do
