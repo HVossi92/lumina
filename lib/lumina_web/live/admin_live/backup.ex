@@ -24,22 +24,20 @@ defmodule LuminaWeb.AdminLive.Backup do
     backup_filename = "lumina_backup_#{timestamp}.tar.gz"
     backup_path = Path.join(System.tmp_dir!(), backup_filename)
 
-    # Create tar.gz of database + uploads
-    {_output, 0} =
-      System.cmd(
-        "tar",
-        [
-          "-czf",
-          backup_path,
-          "-C",
-          File.cwd!(),
-          "lumina_dev.db",
-          "lumina_dev.db-shm",
-          "lumina_dev.db-wal",
-          "priv/static/uploads"
-        ],
-        stderr_to_stdout: true
-      )
+    database_path = Lumina.Repo.config()[:database]
+    db_dir = Path.dirname(database_path)
+    db_base = Path.basename(database_path)
+
+    db_files =
+      [db_base] ++
+        if(File.exists?(database_path <> "-shm"), do: [db_base <> "-shm"], else: []) ++
+        if File.exists?(database_path <> "-wal"), do: [db_base <> "-wal"], else: []
+
+    tar_args =
+      ["-czf", backup_path, "-C", db_dir | db_files] ++
+        ["-C", File.cwd!(), "priv/static/uploads"]
+
+    {_output, 0} = System.cmd("tar", tar_args, stderr_to_stdout: true)
 
     # Trigger download via JavaScript
     {:noreply,

@@ -73,6 +73,7 @@ defmodule Lumina.Media.Photo do
     read :for_album do
       argument :album_id, :uuid, allow_nil?: false
       filter expr(album_id == ^arg(:album_id))
+      pagination offset?: true, keyset?: true, required?: false
     end
 
     update :add_tags do

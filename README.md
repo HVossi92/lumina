@@ -69,7 +69,6 @@ Lumina runs with **Docker** and **Caddy** as a reverse proxy. A full step-by-ste
    - `SECRET_KEY_BASE` — from `mix phx.gen.secret`
    - `TOKEN_SIGNING_SECRET` — from `mix phx.gen.secret`
    - `PHX_HOST` — your domain (e.g. `lumina.yourdomain.com`)
-   - `LUMINA_BACKUP_PASSWORD` — password for the admin backup page
    - (Optional) `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` for [Google sign-in](#google-oauth)
 
 ### Build and run
@@ -118,7 +117,6 @@ The Lumina container runs as a non-root user and needs write access to mounted v
 | `TOKEN_SIGNING_SECRET`       | JWT signing for auth (generate with `mix phx.gen.secret`)                                |
 | `DATABASE_PATH`              | SQLite DB path (default: `/app/data/lumina.db`)                                          |
 | `PHX_HOST`                   | Public hostname                                                                          |
-| `LUMINA_BACKUP_PASSWORD`     | Password for `/admin/backup`                                                             |
 | `PORT`                       | App port (default: `4000`)                                                               |
 | `POOL_SIZE`                  | DB pool size (default: `5`)                                                              |
 | `GOOGLE_OAUTH_CLIENT_ID`     | (Optional) Google OAuth client ID for “Sign in with Google”                              |
@@ -177,6 +175,15 @@ If these are not set, the Google sign-in option is unavailable; email/password a
 
 ---
 
+## Future improvements (audit backlog)
+
+- **Session/LiveView signing salts**: Move from hardcoded values to env (e.g. `config/runtime.exs`). Ash Authentication uses the `AshAuthentication.Secret` behaviour for token signing; Phoenix session/live_view salts are separate and can follow the same pattern (fetch from Application config set from env).
+- **Upload filename sanitization**: Sanitize `client_name` before storing (e.g. `Path.basename/1`, length limit, strip control chars).
+- **Photos indexes**: Add `create index(:photos, [:org_id])` and `create index(:photos, [:album_id])` for query performance.
+- **Backup async**: Run backup creation in a background process (e.g. Oban job) to avoid blocking the LiveView.
+
+---
+
 ## Tech stack
 
 - **Phoenix** (LiveView), **Ash** (resources, policies, multitenancy), **AshAuthentication** (JWT/session)
@@ -201,9 +208,8 @@ Administrators cannot access org content (albums/photos) unless they join an org
 
 ### Backup access
 
-- Go to **/admin/backup** (you must be signed in).
-- Enter the **backup password** (set by ops via `LUMINA_BACKUP_PASSWORD`).
-- After authentication you can **Download System Backup**. The download includes the SQLite database and all uploaded photos (originals and thumbnails).
+- Go to **/admin/backup** (you must be signed in as an administrator).
+- Click **Download System Backup**. The download includes the SQLite database and all uploaded photos (originals and thumbnails).
 
 Use this for manual backups or to restore data on another instance.
 

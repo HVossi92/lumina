@@ -4,28 +4,30 @@ defmodule LuminaWeb.AlbumLive.Show do
   alias Lumina.Media.Photo
   alias Lumina.Media.Thumbnail
 
+  @default_photo_limit 200
+
   @impl true
   def mount(%{"org_slug" => slug, "album_id" => album_id}, _session, socket) do
     user = socket.assigns.current_user
 
     org = Lumina.Media.Org.by_slug!(slug, actor: user)
 
-    album =
-      Ash.get!(Lumina.Media.Album, album_id,
-        tenant: org.id,
-        actor: user,
-        load: [:photos]
-      )
+    album = Ash.get!(Lumina.Media.Album, album_id, tenant: org.id, actor: user)
 
-    photos =
-      (album.photos || [])
-      |> Enum.sort_by(& &1.inserted_at, DateTime)
+    photos_page =
+      Photo
+      |> Ash.Query.for_read(:for_album, %{album_id: album_id})
+      |> Ash.Query.sort(:inserted_at)
+      |> Ash.read!(actor: user, tenant: org.id, page: [limit: @default_photo_limit, offset: 0])
+
+    photos = photos_page.results
 
     {:ok,
      assign(socket,
        org: org,
        album: album,
        photos: photos,
+       photos_page: photos_page,
        search_query: "",
        open_menu_photo_id: nil,
        lightbox_index: nil,
@@ -114,13 +116,16 @@ defmodule LuminaWeb.AlbumLive.Show do
     |> Ash.Changeset.for_update(:add_tags, %{tags: tags})
     |> Ash.update(actor: user, tenant: org.id)
 
-    photos =
-      Photo.for_album!(socket.assigns.album.id, actor: user, tenant: org.id)
-      |> Enum.sort_by(& &1.inserted_at, DateTime)
+    {photos, photos_page} = reload_photos_page(socket)
 
     {:noreply,
      socket
-     |> assign(photos: photos, edit_tags_photo_id: nil, edit_tags_form: nil)
+     |> assign(
+       photos: photos,
+       photos_page: photos_page,
+       edit_tags_photo_id: nil,
+       edit_tags_form: nil
+     )
      |> put_flash(:info, "Tags updated")}
   end
 
@@ -157,13 +162,16 @@ defmodule LuminaWeb.AlbumLive.Show do
          |> Ash.Changeset.for_update(:rename, %{filename: String.trim(filename)})
          |> Ash.update(actor: user, tenant: org.id) do
       {:ok, _updated} ->
-        photos =
-          Photo.for_album!(socket.assigns.album.id, actor: user, tenant: org.id)
-          |> Enum.sort_by(& &1.inserted_at, DateTime)
+        {photos, photos_page} = reload_photos_page(socket)
 
         {:noreply,
          socket
-         |> assign(photos: photos, rename_photo_id: nil, rename_form: nil)
+         |> assign(
+           photos: photos,
+           photos_page: photos_page,
+           rename_photo_id: nil,
+           rename_form: nil
+         )
          |> put_flash(:info, "Photo renamed")}
 
       {:error, error} ->
@@ -241,15 +249,33 @@ defmodule LuminaWeb.AlbumLive.Show do
 
     Ash.destroy!(photo, actor: user, tenant: org.id)
 
-    # Reload photos and sort; close lightbox when photos change
-    photos =
-      Lumina.Media.Photo.for_album!(socket.assigns.album.id, actor: user, tenant: org.id)
-      |> Enum.sort_by(& &1.inserted_at, DateTime)
+    {photos, photos_page} = reload_photos_page(socket)
 
     {:noreply,
      socket
-     |> assign(photos: photos, lightbox_index: nil)
+     |> assign(photos: photos, photos_page: photos_page, lightbox_index: nil)
      |> put_flash(:info, "Photo deleted")}
+  end
+
+  defp reload_photos_page(socket) do
+    user = socket.assigns.current_user
+    org = socket.assigns.org
+    album_id = socket.assigns.album.id
+    page = socket.assigns.photos_page
+
+    offset = if page, do: page.offset, else: 0
+
+    photos_page =
+      Photo
+      |> Ash.Query.for_read(:for_album, %{album_id: album_id})
+      |> Ash.Query.sort(:inserted_at)
+      |> Ash.read!(
+        actor: user,
+        tenant: org.id,
+        page: [limit: @default_photo_limit, offset: offset]
+      )
+
+    {photos_page.results, photos_page}
   end
 
   defp filter_photos(photos, search_query) do
