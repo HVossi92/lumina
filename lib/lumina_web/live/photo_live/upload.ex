@@ -55,6 +55,13 @@ defmodule LuminaWeb.PhotoLive.Upload do
 
   @impl true
   def handle_event("validate", _params, socket) do
+    require Logger
+    Logger.info("[Upload] validate event received")
+
+    Logger.info(
+      "[Upload] Current upload entries: #{length(socket.assigns.uploads.photos.entries)}"
+    )
+
     {:noreply, socket}
   end
 
@@ -187,6 +194,11 @@ defmodule LuminaWeb.PhotoLive.Upload do
 
   @impl true
   def render(assigns) do
+    require Logger
+    Logger.info("[Upload] Rendering upload page")
+    Logger.info("[Upload] Upload ref: #{inspect(assigns.uploads.photos.ref)}")
+    Logger.info("[Upload] Upload entries count: #{length(assigns.uploads.photos.entries)}")
+
     ~H"""
     <section>
       <h1 class="text-3xl font-serif font-bold text-base-content mb-6 text-balance">
@@ -194,9 +206,12 @@ defmodule LuminaWeb.PhotoLive.Upload do
       </h1>
 
       <form id="upload-form" phx-submit="save" phx-change="validate">
-        <div
-          class="border border-dashed border-base-300 rounded-md p-10 text-center hover:border-accent/50 transition-colors cursor-pointer bg-base-200/40"
+        <label
+          id="upload-dropzone-label"
+          for="upload-photos-input"
+          class="block border border-dashed border-base-300 rounded-md p-10 text-center hover:border-accent/50 transition-colors cursor-pointer bg-base-200/40"
           phx-drop-target={@uploads.photos.ref}
+          phx-hook=".UploadDebug"
         >
           <.icon name="hero-arrow-up-tray" class="mx-auto size-8 text-base-content/20" />
           <p class="text-base-content font-medium text-sm mt-3 mb-1">
@@ -205,8 +220,91 @@ defmodule LuminaWeb.PhotoLive.Upload do
           <p class="text-xs text-base-content/40">
             PNG, JPG, GIF, WebP up to 10MB (max 10 files)
           </p>
-          <.live_file_input upload={@uploads.photos} class="sr-only" />
-        </div>
+          <.live_file_input id="upload-photos-input" upload={@uploads.photos} class="sr-only" />
+        </label>
+
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".UploadDebug">
+          export default {
+            mounted() {
+              console.log("[UploadDebug] Hook mounted");
+              console.log("[UploadDebug] Label element:", this.el);
+              console.log("[UploadDebug] Label for attribute:", this.el.getAttribute("for"));
+
+              // Search for file input by ID
+              const fileInputById = document.getElementById("upload-photos-input");
+              console.log("[UploadDebug] File input by ID 'upload-photos-input':", fileInputById);
+
+              // Search for ALL file inputs in the form
+              const form = document.getElementById("upload-form");
+              console.log("[UploadDebug] Form found:", form);
+
+              if (form) {
+                const allFileInputs = form.querySelectorAll('input[type="file"]');
+                console.log("[UploadDebug] All file inputs in form:", allFileInputs);
+                console.log("[UploadDebug] File input count:", allFileInputs.length);
+
+                allFileInputs.forEach((input, index) => {
+                  console.log(`[UploadDebug] File input ${index}:`, input);
+                  console.log(`[UploadDebug] File input ${index} id:`, input.id);
+                  console.log(`[UploadDebug] File input ${index} name:`, input.name);
+                  console.log(`[UploadDebug] File input ${index} classes:`, input.className);
+                  console.log(`[UploadDebug] File input ${index} parent:`, input.parentElement);
+                  console.log(`[UploadDebug] File input ${index} is inside label:`, this.el.contains(input));
+                });
+
+                // Also check inside the label
+                const inputsInLabel = this.el.querySelectorAll('input[type="file"]');
+                console.log("[UploadDebug] File inputs inside label:", inputsInLabel);
+                console.log("[UploadDebug] File inputs inside label count:", inputsInLabel.length);
+              }
+
+              // Check if label is correctly associated
+              const labelFor = this.el.getAttribute("for");
+              console.log("[UploadDebug] Label 'for' value:", labelFor);
+
+              // Add click listener to label
+              this.el.addEventListener("click", (e) => {
+                console.log("[UploadDebug] Label clicked!", e);
+                console.log("[UploadDebug] Click target:", e.target);
+                console.log("[UploadDebug] Click currentTarget:", e.currentTarget);
+
+                // Try to find file input again on click
+                const inputById = document.getElementById("upload-photos-input");
+                console.log("[UploadDebug] File input by ID on click:", inputById);
+
+                // Try to find any file input in the form
+                const form = document.getElementById("upload-form");
+                if (form) {
+                  const allFileInputs = form.querySelectorAll('input[type="file"]');
+                  console.log("[UploadDebug] All file inputs on click:", allFileInputs);
+
+                  if (allFileInputs.length > 0) {
+                    const firstInput = allFileInputs[0];
+                    console.log("[UploadDebug] Using first file input:", firstInput);
+                    console.log("[UploadDebug] First file input id:", firstInput.id);
+                    console.log("[UploadDebug] Attempting to trigger file input click");
+                    firstInput.click();
+                    console.log("[UploadDebug] File input click triggered");
+                  } else {
+                    console.error("[UploadDebug] No file inputs found in form!");
+                  }
+                } else {
+                  console.error("[UploadDebug] Form not found!");
+                }
+              });
+
+              // Listen for file input changes on the form
+              if (form) {
+                form.addEventListener("change", (e) => {
+                  if (e.target.type === "file") {
+                    console.log("[UploadDebug] File input changed!", e);
+                    console.log("[UploadDebug] Selected files:", e.target.files);
+                  }
+                });
+              }
+            }
+          }
+        </script>
 
         <%= for entry <- @uploads.photos.entries do %>
           <div class="mt-4 flex items-center gap-3 bg-base-200 rounded-md px-4 py-3 border border-base-300">
