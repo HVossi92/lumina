@@ -17,6 +17,7 @@ defmodule LuminaWeb.Layouts do
   """
   def auth(assigns) do
     ~H"""
+    <.flash_group flash={@flash} />
     <div class="relative min-h-screen flex flex-col items-center justify-center bg-base-100 text-base-content px-4 py-8">
       <.link
         navigate={~p"/admin/sign-in"}
@@ -33,7 +34,6 @@ defmodule LuminaWeb.Layouts do
         {@inner_content}
       </div>
     </div>
-    <.flash_group flash={assigns[:flash] || %{}} />
     """
   end
 
