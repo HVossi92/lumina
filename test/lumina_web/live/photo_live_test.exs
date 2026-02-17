@@ -63,6 +63,75 @@ defmodule LuminaWeb.PhotoLiveTest do
       assert render(view) =~ @storage_limit_message
       assert render(view) =~ "Upload Photos"
     end
+
+    test "redirects when org not found", %{conn: conn, user: user, album: album} do
+      conn = log_in_user(conn, user)
+
+      {:error, {:redirect, %{to: path}}} =
+        live(conn, ~p"/orgs/nonexistent/albums/#{album.id}/upload")
+
+      assert path == ~p"/"
+    end
+
+    test "redirects when album not found", %{conn: conn, user: user, org: org} do
+      conn = log_in_user(conn, user)
+
+      {:error, {:redirect, %{to: path}}} =
+        live(conn, ~p"/orgs/#{org.slug}/albums/invalid-id/upload")
+
+      assert path == ~p"/orgs/#{org.slug}"
+    end
+
+    test "shows upload progress for files", %{conn: conn, user: user, org: org, album: album} do
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/albums/#{album.id}/upload")
+
+      small_jpeg = <<0xFF, 0xD8, 0xFF, 0xE0>>
+
+      file_input =
+        file_input(view, "#upload-form", :photos, [
+          %{
+            name: "test.jpg",
+            content: small_jpeg,
+            size: 4,
+            type: "image/jpeg"
+          }
+        ])
+
+      render_upload(file_input, "test.jpg", 50)
+
+      html = render(view)
+      assert html =~ "test.jpg"
+      assert html =~ "progress"
+    end
+
+    test "allows canceling upload", %{conn: conn, user: user, org: org, album: album} do
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/albums/#{album.id}/upload")
+
+      small_jpeg = <<0xFF, 0xD8>>
+
+      file_input =
+        file_input(view, "#upload-form", :photos, [
+          %{
+            name: "test.jpg",
+            content: small_jpeg,
+            size: 2,
+            type: "image/jpeg"
+          }
+        ])
+
+      render_upload(file_input, "test.jpg", 50)
+
+      html = render(view)
+      assert html =~ "test.jpg"
+
+      # Cancel the upload
+      view |> element("button[phx-click='cancel-upload']") |> render_click()
+
+      html = render(view)
+      refute html =~ "test.jpg"
+    end
   end
 
   defp log_in_user(conn, user) do

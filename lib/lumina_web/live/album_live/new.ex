@@ -4,9 +4,23 @@ defmodule LuminaWeb.AlbumLive.New do
   @impl true
   def mount(%{"org_slug" => slug}, _session, socket) do
     user = socket.assigns.current_user
-    org = Lumina.Media.Org.by_slug!(slug, actor: user)
 
-    {:ok, assign(socket, org: org, form: to_form(%{}, as: "album"), page_title: "New Album")}
+    case Lumina.Media.Org.by_slug(slug, actor: user) do
+      {:ok, org} ->
+        {:ok, assign(socket, org: org, form: to_form(%{}, as: "album"), page_title: "New Album")}
+
+      {:error, %Ash.Error.Forbidden{}} ->
+        {:ok,
+         socket
+         |> put_flash(:error, "You don't have access to this organization")
+         |> Phoenix.LiveView.redirect(to: ~p"/")}
+
+      {:error, _} ->
+        {:ok,
+         socket
+         |> put_flash(:error, "Organization not found")
+         |> Phoenix.LiveView.redirect(to: ~p"/")}
+    end
   end
 
   @impl true

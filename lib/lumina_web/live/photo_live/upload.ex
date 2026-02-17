@@ -10,20 +10,47 @@ defmodule LuminaWeb.PhotoLive.Upload do
   def mount(%{"org_slug" => slug, "album_id" => album_id}, _session, socket) do
     user = socket.assigns.current_user
 
-    org = Lumina.Media.Org.by_slug!(slug, actor: user)
-    album = Ash.get!(Lumina.Media.Album, album_id, tenant: org.id, actor: user)
+    case Lumina.Media.Org.by_slug(slug, actor: user) do
+      {:ok, org} ->
+        case Ash.get(Lumina.Media.Album, album_id, tenant: org.id, actor: user) do
+          {:ok, album} ->
+            socket =
+              socket
+              |> assign(org: org, album: album, page_title: "Upload Photos")
+              |> allow_upload(:photos,
+                accept: ~w(.jpg .jpeg .png .gif .webp),
+                max_entries: 10,
+                max_file_size: 10_000_000,
+                auto_upload: true
+              )
 
-    socket =
-      socket
-      |> assign(org: org, album: album, page_title: "Upload Photos")
-      |> allow_upload(:photos,
-        accept: ~w(.jpg .jpeg .png .gif .webp),
-        max_entries: 10,
-        max_file_size: 10_000_000,
-        auto_upload: true
-      )
+            {:ok, socket}
 
-    {:ok, socket}
+          {:error, %Ash.Error.Forbidden{}} ->
+            {:ok,
+             socket
+             |> put_flash(:error, "You don't have access to this album")
+             |> Phoenix.LiveView.redirect(to: ~p"/orgs/#{slug}")}
+
+          {:error, _} ->
+            {:ok,
+             socket
+             |> put_flash(:error, "Album not found")
+             |> Phoenix.LiveView.redirect(to: ~p"/orgs/#{slug}")}
+        end
+
+      {:error, %Ash.Error.Forbidden{}} ->
+        {:ok,
+         socket
+         |> put_flash(:error, "You don't have access to this organization")
+         |> Phoenix.LiveView.redirect(to: ~p"/")}
+
+      {:error, _} ->
+        {:ok,
+         socket
+         |> put_flash(:error, "Organization not found")
+         |> Phoenix.LiveView.redirect(to: ~p"/")}
+    end
   end
 
   @impl true
@@ -68,39 +95,94 @@ defmodule LuminaWeb.PhotoLive.Upload do
         original_path = Thumbnail.original_path(photo_id, filename)
         thumbnail_path = Thumbnail.thumbnail_path(photo_id, filename)
 
-        # Ensure directories exist
-        File.mkdir_p!(Path.dirname(original_path))
-        File.mkdir_p!(Path.dirname(thumbnail_path))
+        try do
+          # Ensure directories exist
+          File.mkdir_p(Path.dirname(original_path))
+          File.mkdir_p(Path.dirname(thumbnail_path))
 
-        # Copy uploaded file
-        File.cp!(path, original_path)
+          # Copy uploaded file
+          case File.cp(path, original_path) do
+            :ok ->
+              # Get file size safely
+              file_size =
+                case File.stat(path) do
+                  {:ok, stat} -> stat.size
+                  {:error, _} -> 0
+                end
 
-        # Create photo record
-        {:ok, photo} =
-          Photo
-          |> Ash.Changeset.for_create(:create, %{
-            filename: filename,
-            original_path: original_path,
-            thumbnail_path: thumbnail_path,
-            file_size: File.stat!(path).size,
-            content_type: entry.client_type,
-            album_id: album.id,
-            uploaded_by_id: user.id
-          })
-          |> Ash.create(actor: user, tenant: org.id)
+              # Create photo record
+              case Photo
+                   |> Ash.Changeset.for_create(:create, %{
+                     filename: filename,
+                     original_path: original_path,
+                     thumbnail_path: thumbnail_path,
+                     file_size: file_size,
+                     content_type: entry.client_type,
+                     album_id: album.id,
+                     uploaded_by_id: user.id
+                   })
+                   |> Ash.create(actor: user, tenant: org.id) do
+                {:ok, photo} ->
+                  # Queue thumbnail generation
+                  case ProcessUpload.new(%{photo_id: photo.id}) |> Oban.insert() do
+                    {:ok, _job} ->
+                      {:ok, photo}
 
-        # Queue thumbnail generation
-        %{photo_id: photo.id}
-        |> ProcessUpload.new()
-        |> Oban.insert()
+                    {:error, reason} ->
+                      # Log error but continue - thumbnail will be generated later if needed
+                      require Logger
 
-        {:ok, photo}
+                      Logger.warning(
+                        "Failed to queue thumbnail job for photo #{photo.id}: #{inspect(reason)}"
+                      )
+
+                      {:ok, photo}
+                  end
+
+                {:error, error} ->
+                  # Clean up copied file if photo creation failed
+                  File.rm(original_path)
+                  throw({:error, "Failed to create photo record: #{Exception.message(error)}"})
+              end
+
+            {:error, reason} ->
+              throw({:error, "Failed to save file: #{inspect(reason)}"})
+          end
+        catch
+          {:error, message} ->
+            throw({:error, message})
+        end
       end)
 
-    {:noreply,
-     socket
-     |> put_flash(:info, "#{length(uploaded_files)} photos uploaded successfully!")
-     |> push_navigate(to: ~p"/orgs/#{org.slug}/albums/#{album.id}")}
+    case uploaded_files do
+      [] ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to upload photos. Please try again.")}
+
+      files when is_list(files) ->
+        success_count = Enum.count(files, &match?({:ok, _}, &1))
+        error_count = length(files) - success_count
+
+        message =
+          cond do
+            error_count == 0 ->
+              "#{success_count} photos uploaded successfully!"
+
+            success_count == 0 ->
+              "Failed to upload photos. Please try again."
+
+            true ->
+              "#{success_count} photos uploaded successfully. #{error_count} failed."
+          end
+
+        flash_kind = if error_count == 0, do: :info, else: :error
+
+        {:noreply,
+         socket
+         |> put_flash(flash_kind, message)
+         |> push_navigate(to: ~p"/orgs/#{org.slug}/albums/#{album.id}")}
+    end
   end
 
   @impl true

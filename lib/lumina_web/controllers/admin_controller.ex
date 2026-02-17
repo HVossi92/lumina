@@ -1,7 +1,7 @@
 defmodule LuminaWeb.AdminController do
   use LuminaWeb, :controller
 
-  @backup_filename_pattern ~r/\Alumina_backup_\d{8}_\d{6}\.tar\.gz\z/
+  @backup_filename_pattern ~r/\Alumina_backup_\d{8}_\d{6}\.tar\.gz\z/i
 
   def download_backup(conn, %{"filename" => filename}) do
     if filename =~ @backup_filename_pattern do

@@ -7,6 +7,7 @@ defmodule LuminaWeb.ShareLive.Show do
   def mount(%{"token" => token}, _session, socket) do
     case ShareLink.by_token(token) do
       {:ok, share_link} ->
+        # Check expiration first
         if DateTime.compare(share_link.expires_at, DateTime.utc_now()) == :lt do
           {:ok,
            assign(socket,
@@ -15,27 +16,51 @@ defmodule LuminaWeb.ShareLive.Show do
              page_title: "Expired Link"
            )}
         else
-          # Load album with photos using Repo for multi-tenancy bypass in public context
-          album = Lumina.Repo.get!(Lumina.Media.Album, share_link.album_id)
-          album = Ash.load!(album, [:photos], authorize?: false, tenant: share_link.org_id)
-          share_link = %{share_link | album: album}
+          # Check max_views limit before loading content
+          if share_link.max_views != nil and share_link.view_count >= share_link.max_views do
+            {:ok,
+             assign(socket,
+               error: "This link has reached its maximum number of views",
+               share_link: nil,
+               page_title: "Link Limit Reached"
+             )}
+          else
+            # Reload share_link to get latest view_count before incrementing
+            {:ok, fresh_share_link} = ShareLink.by_token(token)
 
-          # Increment view count
-          {:ok, _} =
-            share_link
-            |> Ash.Changeset.for_update(:increment_view_count)
-            |> Ash.update()
+            # Load album with photos using Repo for multi-tenancy bypass in public context
+            album = Lumina.Repo.get!(Lumina.Media.Album, fresh_share_link.album_id)
 
-          {:ok,
-           assign(socket,
-             share_link: share_link,
-             album: share_link.album,
-             photos: share_link.album.photos,
-             password_required: !is_nil(share_link.password_hash),
-             authenticated: is_nil(share_link.password_hash),
-             error: nil,
-             page_title: share_link.album.name
-           )}
+            album =
+              Ash.load!(album, [:photos], authorize?: false, tenant: fresh_share_link.org_id)
+
+            # Increment view count (only if not at max_views)
+            updated_share_link =
+              if fresh_share_link.max_views == nil or
+                   fresh_share_link.view_count < fresh_share_link.max_views do
+                {:ok, updated_link} =
+                  fresh_share_link
+                  |> Ash.Changeset.for_update(:increment_view_count)
+                  |> Ash.update()
+
+                updated_link
+              else
+                fresh_share_link
+              end
+
+            share_link = %{updated_share_link | album: album}
+
+            {:ok,
+             assign(socket,
+               share_link: share_link,
+               album: album,
+               photos: album.photos,
+               password_required: !is_nil(share_link.password_hash),
+               authenticated: is_nil(share_link.password_hash),
+               error: nil,
+               page_title: album.name
+             )}
+          end
         end
 
       {:error, _} ->
@@ -68,6 +93,7 @@ defmodule LuminaWeb.ShareLive.Show do
       </header>
 
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Layouts.flash_group flash={@flash} />
         <%= if @error do %>
           <div class="flex flex-col items-center justify-center py-16 text-center">
             <div class="bg-error/10 rounded-full p-4 mb-4">

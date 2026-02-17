@@ -5,6 +5,8 @@ defmodule Lumina.Media.ShareLink do
     data_layer: AshSqlite.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  import Ecto.Query
+
   sqlite do
     table "share_links"
     repo Lumina.Repo
@@ -52,10 +54,24 @@ defmodule Lumina.Media.ShareLink do
     update :increment_view_count do
       require_atomic? false
 
-      change fn changeset, _context ->
-        current = Ash.Changeset.get_attribute(changeset, :view_count) || 0
-        Ash.Changeset.force_change_attribute(changeset, :view_count, current + 1)
-      end
+      change before_action(fn changeset, _context ->
+               share_link = changeset.data
+
+               # Use atomic database update to prevent race conditions
+               {count, _} =
+                 Lumina.Repo.update_all(
+                   from(sl in "share_links", where: sl.id == ^share_link.id),
+                   inc: [view_count: 1]
+                 )
+
+               if count > 0 do
+                 # Reload the updated view_count
+                 {:ok, updated} = Lumina.Media.ShareLink.by_token(share_link.token)
+                 Ash.Changeset.force_change_attribute(changeset, :view_count, updated.view_count)
+               else
+                 changeset
+               end
+             end)
     end
 
     read :by_token do

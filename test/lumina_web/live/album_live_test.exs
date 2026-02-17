@@ -185,6 +185,70 @@ defmodule LuminaWeb.AlbumLiveTest do
       html = render(view)
       refute html =~ "lightbox_next"
     end
+
+    test "deletes photo with confirmation", %{conn: conn, user: user, org: org, album: album} do
+      photo = photo_fixture(album, user, %{filename: "to-delete.jpg"})
+
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/albums/#{album.id}")
+
+      # Open photo menu
+      view |> element("[aria-label='Photo menu']") |> render_click()
+
+      # Delete photo (with confirmation)
+      view
+      |> element("button[phx-click='delete_photo'][phx-value-id='#{photo.id}']")
+      |> render_click()
+
+      html = render(view)
+      assert html =~ "Photo deleted"
+      refute html =~ "to-delete.jpg"
+    end
+
+    test "lightbox navigation works", %{conn: conn, user: user, org: org, album: album} do
+      photo_fixture(album, user, %{filename: "first.jpg"})
+      photo_fixture(album, user, %{filename: "second.jpg"})
+      photo_fixture(album, user, %{filename: "third.jpg"})
+
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/albums/#{album.id}")
+
+      # Open lightbox on first photo
+      view |> element("button[phx-click='open_lightbox'][phx-value-index='0']") |> render_click()
+      assert has_element?(view, "#lightbox")
+
+      # Navigate to next
+      view |> element("button[phx-click='lightbox_next']") |> render_click()
+      html = render(view)
+      assert html =~ "2 / 3"
+
+      # Navigate to previous
+      view |> element("button[phx-click='lightbox_prev']") |> render_click()
+      html = render(view)
+      assert html =~ "1 / 3"
+
+      # Close lightbox
+      view |> element("button[phx-click='close_lightbox']") |> render_click()
+      refute has_element?(view, "#lightbox")
+    end
+
+    test "redirects when org not found", %{conn: conn, user: user, album: album} do
+      conn = log_in_user(conn, user)
+
+      {:error, {:redirect, %{to: path}}} =
+        live(conn, ~p"/orgs/nonexistent/albums/#{album.id}")
+
+      assert path == ~p"/"
+    end
+
+    test "redirects when album not found", %{conn: conn, user: user, org: org} do
+      conn = log_in_user(conn, user)
+
+      {:error, {:redirect, %{to: path}}} =
+        live(conn, ~p"/orgs/#{org.slug}/albums/invalid-id")
+
+      assert path == ~p"/orgs/#{org.slug}"
+    end
   end
 
   defp log_in_user(conn, user) do

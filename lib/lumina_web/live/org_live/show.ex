@@ -5,9 +5,26 @@ defmodule LuminaWeb.OrgLive.Show do
   def mount(%{"org_slug" => slug}, _session, socket) do
     user = socket.assigns.current_user
 
-    org = Lumina.Media.Org.by_slug!(slug, actor: user)
-    org = Ash.load!(org, :memberships, authorize?: false)
+    case Lumina.Media.Org.by_slug(slug, actor: user) do
+      {:ok, org} ->
+        org = Ash.load!(org, :memberships, authorize?: false)
+        handle_org_access(socket, org, user)
 
+      {:error, %Ash.Error.Forbidden{}} ->
+        {:ok,
+         socket
+         |> put_flash(:error, "You don't have access to this organization")
+         |> Phoenix.LiveView.redirect(to: ~p"/")}
+
+      {:error, _} ->
+        {:ok,
+         socket
+         |> put_flash(:error, "Organization not found")
+         |> Phoenix.LiveView.redirect(to: ~p"/")}
+    end
+  end
+
+  defp handle_org_access(socket, org, user) do
     # Admin who is not a member cannot access org content (albums/photos)
     member? = Enum.any?(org.memberships || [], fn m -> m.user_id == user.id end)
 

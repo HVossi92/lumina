@@ -10,10 +10,40 @@ defmodule LuminaWeb.AlbumLive.Show do
   def mount(%{"org_slug" => slug, "album_id" => album_id}, _session, socket) do
     user = socket.assigns.current_user
 
-    org = Lumina.Media.Org.by_slug!(slug, actor: user)
+    case Lumina.Media.Org.by_slug(slug, actor: user) do
+      {:ok, org} ->
+        case Ash.get(Lumina.Media.Album, album_id, tenant: org.id, actor: user) do
+          {:ok, album} ->
+            load_album_content(socket, org, album, user, album_id)
 
-    album = Ash.get!(Lumina.Media.Album, album_id, tenant: org.id, actor: user)
+          {:error, %Ash.Error.Forbidden{}} ->
+            {:ok,
+             socket
+             |> put_flash(:error, "You don't have access to this album")
+             |> Phoenix.LiveView.redirect(to: ~p"/orgs/#{slug}")}
 
+          {:error, _} ->
+            {:ok,
+             socket
+             |> put_flash(:error, "Album not found")
+             |> Phoenix.LiveView.redirect(to: ~p"/orgs/#{slug}")}
+        end
+
+      {:error, %Ash.Error.Forbidden{}} ->
+        {:ok,
+         socket
+         |> put_flash(:error, "You don't have access to this organization")
+         |> Phoenix.LiveView.redirect(to: ~p"/")}
+
+      {:error, _} ->
+        {:ok,
+         socket
+         |> put_flash(:error, "Organization not found")
+         |> Phoenix.LiveView.redirect(to: ~p"/")}
+    end
+  end
+
+  defp load_album_content(socket, org, album, user, album_id) do
     photos_page =
       Photo
       |> Ash.Query.for_read(:for_album, %{album_id: album_id})
