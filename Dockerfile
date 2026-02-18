@@ -102,6 +102,7 @@ RUN mkdir -p /app/data /app/priv/static/uploads/originals /app/priv/static/uploa
 # above and adding an entrypoint. See https://github.com/krallin/tini for details
 # ENTRYPOINT ["/tini", "--"]
 
+ENV ERL_MAX_PORTS=1024
 EXPOSE 4000
 
 CMD ["/app/bin/migrate_and_server"]
