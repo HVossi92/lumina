@@ -63,18 +63,28 @@ defmodule Lumina.Media.Thumbnail do
   end
 
   @doc """
+  Returns the absolute path to the uploads directory (app priv).
+  Use this for all filesystem reads/writes so paths match Plug.Static in releases.
+  """
+  def uploads_root do
+    Application.app_dir(:lumina, "priv/static/uploads")
+  end
+
+  @doc """
   Generate thumbnail path for a photo.
+  Returns an absolute path under uploads_root.
   """
   def thumbnail_path(photo_id, _filename) do
-    Path.join(["priv", "static", "uploads", "thumbnails", "#{photo_id}#{@thumbnail_ext}"])
+    Path.join([uploads_root(), "thumbnails", "#{photo_id}#{@thumbnail_ext}"])
   end
 
   @doc """
   Generate original path for a photo.
+  Returns an absolute path under uploads_root.
   """
   def original_path(photo_id, filename) do
     ext = Path.extname(filename)
-    Path.join(["priv", "static", "uploads", "originals", "#{photo_id}#{ext}"])
+    Path.join([uploads_root(), "originals", "#{photo_id}#{ext}"])
   end
 
   @doc """

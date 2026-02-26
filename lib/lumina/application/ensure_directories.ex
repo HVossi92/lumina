@@ -14,7 +14,7 @@ defmodule Lumina.Application.EnsureDirectories do
   Returns :ok regardless of success to allow app to start.
   """
   def init do
-    base = Path.join(File.cwd!(), "priv/static/uploads")
+    base = Application.app_dir(:lumina, "priv/static/uploads")
 
     Enum.each([base | Enum.map(@uploads_subdirs, &Path.join(base, &1))], fn path ->
       ensure_directory(path)

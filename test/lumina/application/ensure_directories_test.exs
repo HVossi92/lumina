@@ -5,7 +5,7 @@ defmodule Lumina.Application.EnsureDirectoriesTest do
 
   describe "init/0" do
     test "ensures priv/static/uploads and originals/thumbnails subdirectories exist" do
-      base = Path.join(File.cwd!(), "priv/static/uploads")
+      base = Application.app_dir(:lumina, "priv/static/uploads")
 
       assert :ok = EnsureDirectories.init()
 

@@ -13,7 +13,7 @@ defmodule LuminaWeb.AdminLive.Backup do
        |> put_flash(:error, "Only administrators can access this page")
        |> Phoenix.LiveView.redirect(to: ~p"/")}
     else
-      uploads_path = Path.join(File.cwd!(), "priv/static/uploads")
+      uploads_path = Lumina.Media.Thumbnail.uploads_root()
       uploads_exist? = File.dir?(uploads_path)
 
       {:ok,
@@ -39,12 +39,15 @@ defmodule LuminaWeb.AdminLive.Backup do
         if(File.exists?(database_path <> "-shm"), do: [db_base <> "-shm"], else: []) ++
         if File.exists?(database_path <> "-wal"), do: [db_base <> "-wal"], else: []
 
-    uploads_path = Path.join(File.cwd!(), "priv/static/uploads")
+    uploads_path = Lumina.Media.Thumbnail.uploads_root()
     uploads_exist? = File.dir?(uploads_path)
+
+    # Use app priv path so tar archives the same directory Plug.Static serves from
+    uploads_parent = Application.app_dir(:lumina, "priv/static")
 
     tar_args =
       ["-czf", backup_path, "-C", db_dir | db_files] ++
-        if(uploads_exist?, do: ["-C", File.cwd!(), "priv/static/uploads"], else: [])
+        if(uploads_exist?, do: ["-C", uploads_parent, "uploads"], else: [])
 
     case System.cmd("tar", tar_args, stderr_to_stdout: true) do
       {_output, 0} ->
