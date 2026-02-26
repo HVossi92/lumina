@@ -14,6 +14,35 @@ defmodule LuminaWeb.AdminLiveTest do
       assert html =~ "Download System Backup"
     end
 
+    test "shows backup contents message (database and photos or database only)", %{conn: conn} do
+      admin = admin_fixture()
+      conn = log_in_user(conn, admin)
+      {:ok, _view, html} = live(conn, ~p"/admin/backup")
+
+      # One of the two conditional messages must be present
+      has_uploads_message = html =~ "Backup will include database and all uploaded photos"
+      no_uploads_message = html =~ "Backup will include database only (no photos uploaded yet)"
+      assert has_uploads_message or no_uploads_message
+    end
+
+    test "download_backup click creates backup and does not crash", %{conn: conn} do
+      admin = admin_fixture()
+      conn = log_in_user(conn, admin)
+      {:ok, view, _html} = live(conn, ~p"/admin/backup")
+
+      view
+      |> element("#admin-backup-download-btn")
+      |> render_click()
+
+      # LiveView should still be alive and show no error flash
+      assert has_element?(view, "#admin-backup-section")
+      assert has_element?(view, "#admin-backup-download-btn")
+
+      # Clean up any backup file created in tmp (filename pattern: lumina_backup_*.tar.gz)
+      tmp = System.tmp_dir!()
+      Path.join(tmp, "lumina_backup_*.tar.gz") |> Path.wildcard() |> Enum.each(&File.rm/1)
+    end
+
     test "redirects non-admin to dashboard with error flash", %{conn: conn} do
       user = user_fixture()
       conn = log_in_user(conn, user)

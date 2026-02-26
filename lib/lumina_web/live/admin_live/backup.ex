@@ -1,6 +1,8 @@
 defmodule LuminaWeb.AdminLive.Backup do
   use LuminaWeb, :live_view
 
+  require Logger
+
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
@@ -11,9 +13,13 @@ defmodule LuminaWeb.AdminLive.Backup do
        |> put_flash(:error, "Only administrators can access this page")
        |> Phoenix.LiveView.redirect(to: ~p"/")}
     else
+      uploads_path = Path.join(File.cwd!(), "priv/static/uploads")
+      uploads_exist? = File.dir?(uploads_path)
+
       {:ok,
        assign(socket,
-         page_title: "Admin Backup"
+         page_title: "Admin Backup",
+         uploads_exist?: uploads_exist?
        )}
     end
   end
@@ -33,18 +39,28 @@ defmodule LuminaWeb.AdminLive.Backup do
         if(File.exists?(database_path <> "-shm"), do: [db_base <> "-shm"], else: []) ++
         if File.exists?(database_path <> "-wal"), do: [db_base <> "-wal"], else: []
 
+    uploads_path = Path.join(File.cwd!(), "priv/static/uploads")
+    uploads_exist? = File.dir?(uploads_path)
+
     tar_args =
       ["-czf", backup_path, "-C", db_dir | db_files] ++
-        ["-C", File.cwd!(), "priv/static/uploads"]
+        if(uploads_exist?, do: ["-C", File.cwd!(), "priv/static/uploads"], else: [])
 
-    {_output, 0} = System.cmd("tar", tar_args, stderr_to_stdout: true)
+    case System.cmd("tar", tar_args, stderr_to_stdout: true) do
+      {_output, 0} ->
+        {:noreply,
+         push_event(socket, "trigger_download", %{
+           url: ~p"/admin/backup/download/#{backup_filename}",
+           filename: backup_filename
+         })}
 
-    # Trigger download via JavaScript
-    {:noreply,
-     push_event(socket, "trigger_download", %{
-       url: ~p"/admin/backup/download/#{backup_filename}",
-       filename: backup_filename
-     })}
+      {output, exit_code} ->
+        Logger.error("Backup creation failed: exit_code=#{exit_code}, output=#{output}")
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to create backup. Please try again or contact support.")}
+    end
   end
 
   @impl true
@@ -71,6 +87,18 @@ defmodule LuminaWeb.AdminLive.Backup do
           </p>
         </div>
       </div>
+
+      <%= if @uploads_exist? do %>
+        <div class="alert alert-info rounded-md text-sm mb-6">
+          <.icon name="hero-information-circle" class="size-5 shrink-0" />
+          <p>Backup will include database and all uploaded photos.</p>
+        </div>
+      <% else %>
+        <div class="alert alert-warning rounded-md text-sm mb-6">
+          <.icon name="hero-exclamation-triangle" class="size-5 shrink-0" />
+          <p>Backup will include database only (no photos uploaded yet).</p>
+        </div>
+      <% end %>
 
       <button
         phx-click="download_backup"

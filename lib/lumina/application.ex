@@ -7,6 +7,8 @@ defmodule Lumina.Application do
 
   @impl true
   def start(_type, _args) do
+    Lumina.Application.EnsureDirectories.init()
+
     children = [
       LuminaWeb.Telemetry,
       Lumina.Repo,
