@@ -50,3 +50,4 @@ npm-debug.log
 /priv/static/uploads/thumbnails/*
 !/priv/static/uploads/thumbnails/.gitkeep
 
+.vscode
